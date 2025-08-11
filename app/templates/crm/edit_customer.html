@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Cliente - {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-edit me-2"></i>
+                Editar Cliente
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.index') }}">CRM</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.customers') }}">Clientes</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.customer_detail', id=customer.id) }}">{{ customer.name }}</a></li>
+                    <li class="breadcrumb-item active">Editar</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{{ url_for('crm.customer_detail', id=customer.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Informações do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="editCustomerForm">
+                        <!-- Informações Básicas -->
+                        <h6 class="text-muted mb-3">Informações Básicas</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Nome Completo *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ customer.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ customer.email or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Telefone</label>
+                                <input type="text" class="form-control" id="phone" name="phone" 
+                                       value="{{ customer.phone or '' }}" placeholder="(11) 99999-9999">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="document" class="form-label">CPF/CNPJ</label>
+                                <input type="text" class="form-control" id="document" name="document" 
+                                       value="{{ customer.document or '' }}" placeholder="000.000.000-00">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="active" {% if customer.status == 'active' %}selected{% endif %}>Ativo</option>
+                                    <option value="inactive" {% if customer.status == 'inactive' %}selected{% endif %}>Inativo</option>
+                                    <option value="prospect" {% if customer.status == 'prospect' %}selected{% endif %}>Prospecto</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="source" class="form-label">Origem</label>
+                                <select class="form-select" id="source" name="source">
+                                    <option value="">Selecione...</option>
+                                    <option value="website" {% if customer.source == 'website' %}selected{% endif %}>Website</option>
+                                    <option value="social_media" {% if customer.source == 'social_media' %}selected{% endif %}>Redes Sociais</option>
+                                    <option value="referral" {% if customer.source == 'referral' %}selected{% endif %}>Indicação</option>
+                                    <option value="advertising" {% if customer.source == 'advertising' %}selected{% endif %}>Publicidade</option>
+                                    <option value="cold_call" {% if customer.source == 'cold_call' %}selected{% endif %}>Cold Call</option>
+                                    <option value="other" {% if customer.source == 'other' %}selected{% endif %}>Outro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Informações da Empresa -->
+                        <h6 class="text-muted mb-3">Informações da Empresa</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="company" class="form-label">Empresa</label>
+                                <input type="text" class="form-control" id="company" name="company" 
+                                       value="{{ customer.company or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="position" class="form-label">Cargo</label>
+                                <input type="text" class="form-control" id="position" name="position" 
+                                       value="{{ customer.position or '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="industry" class="form-label">Setor/Indústria</label>
+                                <select class="form-select" id="industry" name="industry">
+                                    <option value="">Selecione...</option>
+                                    <option value="technology" {% if customer.industry == 'technology' %}selected{% endif %}>Tecnologia</option>
+                                    <option value="healthcare" {% if customer.industry == 'healthcare' %}selected{% endif %}>Saúde</option>
+                                    <option value="finance" {% if customer.industry == 'finance' %}selected{% endif %}>Finanças</option>
+                                    <option value="education" {% if customer.industry == 'education' %}selected{% endif %}>Educação</option>
+                                    <option value="retail" {% if customer.industry == 'retail' %}selected{% endif %}>Varejo</option>
+                                    <option value="manufacturing" {% if customer.industry == 'manufacturing' %}selected{% endif %}>Manufatura</option>
+                                    <option value="services" {% if customer.industry == 'services' %}selected{% endif %}>Serviços</option>
+                                    <option value="real_estate" {% if customer.industry == 'real_estate' %}selected{% endif %}>Imobiliário</option>
+                                    <option value="other" {% if customer.industry == 'other' %}selected{% endif %}>Outro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" class="form-control" id="website" name="website" 
+                                       value="{{ customer.website or '' }}" placeholder="https://www.exemplo.com">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Endereço -->
+                        <h6 class="text-muted mb-3">Endereço</h6>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Endereço Completo</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" 
+                                      placeholder="Rua, número, complemento, bairro, cidade, estado, CEP">{{ customer.address or '' }}</textarea>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Observações -->
+                        <h6 class="text-muted mb-3">Observações</h6>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                      placeholder="Informações adicionais sobre o cliente...">{{ customer.notes or '' }}</textarea>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-end gap-2">
+                                                         <a href="{{ url_for('crm.customer_detail', id=customer.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar com Dicas -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Dicas
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-1"></i>Campos Obrigatórios</h6>
+                        <p class="mb-0">Apenas o nome e status são obrigatórios. Os demais campos podem ser preenchidos conforme necessário.</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-1"></i>Importante</h6>
+                        <p class="mb-0">Alterações no status do cliente podem afetar relatórios e análises do sistema.</p>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle me-1"></i>Boas Práticas</h6>
+                        <ul class="mb-0">
+                            <li>Mantenha as informações sempre atualizadas</li>
+                            <li>Use observações para registrar interações importantes</li>
+                            <li>Classifique corretamente a origem do cliente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de Alterações -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>ID:</strong></td>
+                            <td>#{{ customer.id }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Criado em:</strong></td>
+                            <td>{{ customer.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Última atualização:</strong></td>
+                            <td>{{ customer.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Máscaras para os campos
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para telefone
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+    }
+
+    // Máscara para CPF/CNPJ
+    const documentInput = document.getElementById('document');
+    if (documentInput) {
+        documentInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                // CPF
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            } else {
+                // CNPJ
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+
+    // Validação do formulário
+    const form = document.getElementById('editCustomerForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const status = document.getElementById('status').value;
+            
+            if (!name) {
+                e.preventDefault();
+                alert('Por favor, preencha o nome do cliente.');
+                document.getElementById('name').focus();
+                return false;
+            }
+            
+            if (!status) {
+                e.preventDefault();
+                alert('Por favor, selecione o status do cliente.');
+                document.getElementById('status').focus();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+

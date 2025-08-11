@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Categoria - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-tag me-2"></i>Nova Categoria
+        </h1>
+        <a href="{{ url_for('inventory.categories') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>Informações da Categoria
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nome da Categoria *</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           required placeholder="Ex: Eletrônicos">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="slug" class="form-label">Slug</label>
+                                    <input type="text" class="form-control" id="slug" name="slug" 
+                                           placeholder="ex: eletronicos">
+                                    <div class="form-text">Identificador único da categoria (opcional)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="4" placeholder="Descreva a categoria e seus produtos..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="color" class="form-label">Cor da Categoria</label>
+                                    <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                           value="#007bff" title="Escolha uma cor para a categoria">
+                                    <div class="form-text">Usada para identificar visualmente a categoria</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="icon" class="form-label">Ícone</label>
+                                    <select class="form-select" id="icon" name="icon">
+                                        <option value="tag">🏷️ Tag</option>
+                                        <option value="box">📦 Caixa</option>
+                                        <option value="laptop">💻 Laptop</option>
+                                        <option value="mobile">📱 Mobile</option>
+                                        <option value="car">🚗 Carro</option>
+                                        <option value="home">🏠 Casa</option>
+                                        <option value="food">🍕 Comida</option>
+                                        <option value="clothing">👕 Roupas</option>
+                                        <option value="book">📚 Livros</option>
+                                        <option value="tool">🔧 Ferramentas</option>
+                                        <option value="medicine">💊 Medicamentos</option>
+                                        <option value="sport">⚽ Esportes</option>
+                                        <option value="beauty">💄 Beleza</option>
+                                        <option value="toy">🧸 Brinquedos</option>
+                                        <option value="garden">🌱 Jardim</option>
+                                    </select>
+                                    <div class="form-text">Ícone para representar a categoria</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    Categoria Ativa
+                                </label>
+                            </div>
+                            <div class="form-text">Categorias inativas não aparecem nas listas de produtos</div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Ações -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('inventory.categories') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Categoria
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Dicas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Organização</h6>
+                        <ul class="mb-0">
+                            <li>Crie categorias que façam sentido para seu negócio</li>
+                            <li>Use nomes claros e descritivos</li>
+                            <li>Evite criar muitas categorias muito específicas</li>
+                            <li>O slug é usado para URLs amigáveis</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Campos Obrigatórios</h6>
+                        <ul class="mb-0">
+                            <li>Nome da categoria</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exemplos de Categorias -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Exemplos de Categorias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Eletrônicos</small><br>
+                            <small class="text-muted">Roupas</small><br>
+                            <small class="text-muted">Livros</small><br>
+                            <small class="text-muted">Casa</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Alimentos</small><br>
+                            <small class="text-muted">Esportes</small><br>
+                            <small class="text-muted">Beleza</small><br>
+                            <small class="text-muted">Ferramentas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Estatísticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">0</h4>
+                                <small class="text-muted">Categorias</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success mb-1">0</h4>
+                            <small class="text-muted">Produtos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-gerar slug a partir do nome
+document.getElementById('name').addEventListener('input', function(e) {
+    const name = e.target.value;
+    const slug = name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+        .replace(/\s+/g, '-') // Substitui espaços por hífens
+        .replace(/-+/g, '-') // Remove hífens duplicados
+        .trim();
+    
+    document.getElementById('slug').value = slug;
+});
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    
+    if (!name) {
+        e.preventDefault();
+        alert('Por favor, preencha o nome da categoria.');
+        document.getElementById('name').focus();
+        return;
+    }
+});
+
+// Preview do ícone
+document.getElementById('icon').addEventListener('change', function(e) {
+    const icon = e.target.value;
+    const iconMap = {
+        'tag': '🏷️',
+        'box': '📦',
+        'laptop': '💻',
+        'mobile': '📱',
+        'car': '🚗',
+        'home': '🏠',
+        'food': '🍕',
+        'clothing': '👕',
+        'book': '📚',
+        'tool': '🔧',
+        'medicine': '💊',
+        'sport': '⚽',
+        'beauty': '💄',
+        'toy': '🧸',
+        'garden': '🌱'
+    };
+    
+    // Aqui você pode adicionar preview do ícone se desejar
+    console.log('Ícone selecionado:', iconMap[icon] || icon);
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Transações - Finanças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Transações</h1>
+        <a href="{{ url_for('finance.new_transaction') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Nova Transação
+        </a>
+    </div>
+
+    <!-- Search and filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request.args.get('search', '') }}" placeholder="Descrição ou referência">
+                </div>
+                <div class="col-md-2">
+                    <label for="type" class="form-label">Tipo</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">Todos</option>
+                        <option value="receita" {% if request.args.get('type') == 'receita' %}selected{% endif %}>Receita</option>
+                        <option value="despesa" {% if request.args.get('type') == 'despesa' %}selected{% endif %}>Despesa</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="account" class="form-label">Conta</label>
+                    <select class="form-select" id="account" name="account">
+                        <option value="">Todas</option>
+                        {% for account in accounts %}
+                        <option value="{{ account.id }}" {% if request.args.get('account')|int == account.id %}selected{% endif %}>
+                            {{ account.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Concluída</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pendente</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Período</label>
+                    <select class="form-select" id="date_range" name="date_range">
+                        <option value="">Todos</option>
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Hoje</option>
+                        <option value="week" {% if request.args.get('date_range') == 'week' %}selected{% endif %}>Esta Semana</option>
+                        <option value="month" {% if request.args.get('date_range') == 'month' %}selected{% endif %}>Este Mês</option>
+                        <option value="quarter" {% if request.args.get('date_range') == 'quarter' %}selected{% endif %}>Este Trimestre</option>
+                        <option value="year" {% if request.args.get('date_range') == 'year' %}selected{% endif %}>Este Ano</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{{ url_for('finance.transactions') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Receitas</h6>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(summary.total_revenue) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-up fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Despesas</h6>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(summary.total_expenses) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-down fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Saldo</h6>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(summary.balance) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-balance-scale fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Pendentes</h6>
+                            <h4 class="mb-0">{{ summary.pending_count }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions table -->
+    <div class="card">
+        <div class="card-body">
+            {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Tipo</th>
+                                <th>Conta</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold">{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</span>
+                                        <small class="text-muted">{{ transaction.transaction_date.strftime('%H:%M') }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">{{ transaction.description }}</div>
+                                        {% if transaction.reference %}
+                                            <small class="text-muted">Ref: {{ transaction.reference }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if transaction.transaction_type == 'receita' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-arrow-up me-1"></i>
+                                            Receita
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-arrow-down me-1"></i>
+                                            Despesa
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ transaction.account.name }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold {% if transaction.transaction_type == 'receita' %}text-success{% else %}text-danger{% endif %}">
+                                        R$ {{ "%.2f"|format(transaction.amount) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if transaction.status == 'completed' %}
+                                        <span class="badge bg-success">Concluída</span>
+                                    {% elif transaction.status == 'pending' %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cancelada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('finance.transaction_detail', id=transaction.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('finance.edit_transaction', id=transaction.id) }}" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteTransaction({{ transaction.id }})" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if pagination %}
+                <nav aria-label="Navegação de páginas" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('finance.transactions', page=pagination.prev_num, **request.args) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in pagination.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != pagination.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('finance.transactions', page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('finance.transactions', page=pagination.next_num, **request.args) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhuma transação encontrada</h5>
+                    <p class="text-muted">Comece registrando sua primeira transação.</p>
+                    <a href="{{ url_for('finance.new_transaction') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Nova Transação
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteTransaction(transactionId) {
+    if (confirm('Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.')) {
+        fetch(`/finance/transactions/${transactionId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir transação: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir transação');
+        });
+    }
+}
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Produto - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-box me-2"></i>Novo Produto
+        </h1>
+        <a href="{{ url_for('inventory.products') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>Informações do Produto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <!-- Informações Básicas -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Informações Básicas</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nome do Produto *</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           required placeholder="Ex: Notebook Dell Inspiron">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Descrição</label>
+                                    <textarea class="form-control" id="description" name="description" 
+                                              rows="3" placeholder="Descrição detalhada do produto..."></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Categoria</label>
+                                    <select class="form-select" id="category_id" name="category_id">
+                                        <option value="">Selecione uma categoria</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="unit" class="form-label">Unidade</label>
+                                    <select class="form-select" id="unit" name="unit">
+                                        <option value="un">Unidade</option>
+                                        <option value="kg">Quilograma</option>
+                                        <option value="l">Litro</option>
+                                        <option value="m">Metro</option>
+                                        <option value="pct">Pacote</option>
+                                        <option value="cx">Caixa</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Códigos e Identificação -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Códigos e Identificação</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="sku" class="form-label">SKU</label>
+                                    <input type="text" class="form-control" id="sku" name="sku" 
+                                           placeholder="Código interno do produto">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="barcode" class="form-label">Código de Barras</label>
+                                    <input type="text" class="form-control" id="barcode" name="barcode" 
+                                           placeholder="Código de barras (EAN, UPC, etc.)">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="image" class="form-label">Imagem do Produto</label>
+                                    <input type="file" class="form-control" id="image" name="image" 
+                                           accept="image/*">
+                                    <div class="form-text">Formatos aceitos: JPG, PNG, GIF (máx. 2MB)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Preços -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">Preços</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cost_price" class="form-label">Preço de Custo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="cost_price" name="cost_price" 
+                                               step="0.01" min="0" placeholder="0,00">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sale_price" class="form-label">Preço de Venda</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="sale_price" name="sale_price" 
+                                               step="0.01" min="0" placeholder="0,00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Controle de Estoque -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">Controle de Estoque</h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="current_stock" class="form-label">Estoque Atual</label>
+                                    <input type="number" class="form-control" id="current_stock" name="current_stock" 
+                                           min="0" value="0" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="min_stock" class="form-label">Estoque Mínimo</label>
+                                    <input type="number" class="form-control" id="min_stock" name="min_stock" 
+                                           min="0" value="0" placeholder="0">
+                                    <div class="form-text">Alerta quando estoque ficar abaixo deste valor</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="max_stock" class="form-label">Estoque Máximo</label>
+                                    <input type="number" class="form-control" id="max_stock" name="max_stock" 
+                                           min="0" placeholder="0">
+                                    <div class="form-text">Capacidade máxima de armazenamento</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Ações -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('inventory.products') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Produto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar com Dicas -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Informações Importantes</h6>
+                        <ul class="mb-0">
+                            <li>O <strong>SKU</strong> deve ser único para cada produto</li>
+                            <li>Configure o <strong>estoque mínimo</strong> para receber alertas</li>
+                            <li>O <strong>preço de custo</strong> é usado para calcular margens</li>
+                            <li>Produtos inativos não aparecem nas vendas</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Campos Obrigatórios</h6>
+                        <ul class="mb-0">
+                            <li>Nome do produto</li>
+                            <li>Preço de venda</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas Rápidas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Estatísticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">{{ categories|length }}</h4>
+                                <small class="text-muted">Categorias</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success mb-1">0</h4>
+                            <small class="text-muted">Produtos Ativos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para preços
+    const costPriceInput = document.getElementById('cost_price');
+    if (costPriceInput) {
+        costPriceInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d.,]/g, '');
+            value = value.replace(',', '.');
+            if (value) {
+                value = parseFloat(value).toFixed(2);
+                e.target.value = value;
+            }
+        });
+    }
+
+    const salePriceInput = document.getElementById('sale_price');
+    if (salePriceInput) {
+        salePriceInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d.,]/g, '');
+            value = value.replace(',', '.');
+            if (value) {
+                value = parseFloat(value).toFixed(2);
+                e.target.value = value;
+            }
+        });
+    }
+
+    // Validação do formulário
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const name = document.getElementById('name');
+            const salePrice = document.getElementById('sale_price');
+            
+            if (!name || !name.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, preencha o nome do produto.');
+                if (name) name.focus();
+                return;
+            }
+            
+            if (!salePrice || parseFloat(salePrice.value) <= 0) {
+                e.preventDefault();
+                alert('Por favor, informe um preço de venda válido.');
+                if (salePrice) salePrice.focus();
+                return;
+            }
+        });
+    }
+
+    // Preview da imagem
+    const imageInput = document.getElementById('image');
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) { // 2MB
+                    alert('A imagem deve ter no máximo 2MB.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Aqui você pode adicionar preview da imagem se desejar
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Cliente - {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user me-2"></i>
+                Detalhes do Cliente
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.index') }}">CRM</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.customers') }}">Clientes</a></li>
+                    <li class="breadcrumb-item active">{{ customer.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('crm.edit_customer', id=customer.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            <a href="{{ url_for('crm.new_sale') }}?customer_id={{ customer.id }}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>Nova Venda
+            </a>
+            <button type="button" class="btn btn-danger" onclick="deleteCustomer({{ customer.id }})">
+                <i class="fas fa-trash me-1"></i>Excluir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações do Cliente -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informações do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Informações Básicas</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Nome:</strong></td>
+                                    <td>{{ customer.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>
+                                        {% if customer.email %}
+                                            <a href="mailto:{{ customer.email }}">{{ customer.email }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Telefone:</strong></td>
+                                    <td>
+                                        {% if customer.phone %}
+                                            <a href="tel:{{ customer.phone }}">{{ customer.phone }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>CPF/CNPJ:</strong></td>
+                                    <td>{{ customer.document or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if customer.status == 'active' %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% elif customer.status == 'inactive' %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Prospecto</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Informações da Empresa</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Empresa:</strong></td>
+                                    <td>{{ customer.company or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cargo:</strong></td>
+                                    <td>{{ customer.position or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Setor:</strong></td>
+                                    <td>{{ customer.industry or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Website:</strong></td>
+                                    <td>
+                                        {% if customer.website %}
+                                            <a href="{{ customer.website }}" target="_blank">{{ customer.website }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if customer.address %}
+                    <hr>
+                    <h6 class="text-muted">Endereço</h6>
+                    <p class="mb-0">{{ customer.address }}</p>
+                    {% endif %}
+
+                    {% if customer.notes %}
+                    <hr>
+                    <h6 class="text-muted">Observações</h6>
+                    <p class="mb-0">{{ customer.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico de Vendas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Histórico de Vendas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if customer.sales %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Número</th>
+                                        <th>Itens</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in customer.sales %}
+                                    <tr>
+                                        <td>{{ sale.date.strftime('%d/%m/%Y') }}</td>
+                                        <td>#{{ sale.id }}</td>
+                                        <td>{{ sale.items|length }} itens</td>
+                                        <td>R$ {{ "%.2f"|format(sale.total_amount) }}</td>
+                                        <td>
+                                            {% if sale.status == 'completed' %}
+                                                <span class="badge bg-success">Concluída</span>
+                                            {% elif sale.status == 'pending' %}
+                                                <span class="badge bg-warning">Pendente</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Cancelada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('crm.sale_detail', sale_id=sale.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhuma venda registrada para este cliente.</p>
+                            <a href="{{ url_for('crm.new_sale') }}?customer_id={{ customer.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Registrar Primeira Venda
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar com Estatísticas -->
+        <div class="col-lg-4">
+            <!-- Estatísticas do Cliente -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estatísticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ customer.sales|length }}</h4>
+                                <small class="text-muted">Total de Vendas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">
+                                R$ {{ "%.2f"|format(customer.sales|sum(attribute='total_amount')) }}
+                            </h4>
+                            <small class="text-muted">Valor Total</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-info">
+                                    {{ customer.sales|selectattr('status', 'equalto', 'completed')|list|length }}
+                                </h4>
+                                <small class="text-muted">Vendas Concluídas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-warning">
+                                {{ customer.sales|selectattr('status', 'equalto', 'pending')|list|length }}
+                            </h4>
+                            <small class="text-muted">Vendas Pendentes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações de Contato -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-address-book me-2"></i>
+                        Contato Rápido
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if customer.phone %}
+                    <a href="tel:{{ customer.phone }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-phone me-2"></i>Ligar
+                    </a>
+                    {% endif %}
+                    
+                    {% if customer.email %}
+                    <a href="mailto:{{ customer.email }}" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-envelope me-2"></i>Enviar Email
+                    </a>
+                    {% endif %}
+                    
+                    {% if customer.website %}
+                    <a href="{{ customer.website }}" target="_blank" class="btn btn-outline-info w-100">
+                        <i class="fas fa-globe me-2"></i>Visitar Site
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações do Sistema -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>ID:</strong></td>
+                            <td>#{{ customer.id }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Criado em:</strong></td>
+                            <td>{{ customer.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Atualizado em:</strong></td>
+                            <td>{{ customer.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteCustomer(customerId) {
+    if (confirm('Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.')) {
+        fetch(`/crm/customers/${customerId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Cliente excluído com sucesso!');
+                window.location.href = '/crm/customers';
+            } else {
+                alert('Erro ao excluir cliente: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir cliente');
+        });
+    }
+}
+</script>
+{% endblock %}
+
+

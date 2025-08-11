@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Transação - Finanças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-credit-card me-2"></i>Detalhes da Transação
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('finance.edit_transaction', id=transaction.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                <i class="fas fa-trash me-2"></i>Excluir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Informações da Transação -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações da Transação
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Tipo:</small>
+                                <div>
+                                    {% if transaction.transaction_type == 'receita' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-arrow-up me-1"></i>Receita
+                                        </span>
+                                    {% elif transaction.transaction_type == 'despesa' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-arrow-down me-1"></i>Despesa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-exchange-alt me-1"></i>Transferência
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Valor:</small>
+                                <div class="h4 fw-bold {{ 'text-success' if transaction.transaction_type == 'receita' else 'text-danger' }}">
+                                    R$ {{ "%.2f"|format(transaction.amount) }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Descrição:</small>
+                                <div>{{ transaction.description }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Categoria:</small>
+                                <div>
+                                    {% if transaction.category %}
+                                        <span class="badge bg-secondary">{{ transaction.category }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Não categorizada</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Conta:</small>
+                                <div>{{ transaction.account.name }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Data da Transação:</small>
+                                <div>{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Data de Vencimento:</small>
+                                <div>
+                                    {% if transaction.due_date %}
+                                        {{ transaction.due_date.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted">Status:</small>
+                                <div>
+                                    {% if transaction.status == 'completed' %}
+                                        <span class="badge bg-success">Concluída</span>
+                                    {% elif transaction.status == 'pending' %}
+                                        <span class="badge bg-warning">Pendente</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cancelada</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if transaction.payment_method or transaction.reference %}
+                    <hr>
+                    <div class="row">
+                        {% if transaction.payment_method %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Método de Pagamento:</small>
+                                <div>{{ transaction.payment_method }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if transaction.reference %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <small class="text-muted">Referência:</small>
+                                <div>{{ transaction.reference }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if transaction.notes %}
+                    <hr>
+                    <div class="mb-3">
+                        <small class="text-muted">Observações:</small>
+                        <div>{{ transaction.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico da Conta -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Histórico da Conta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if transaction.account.transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in transaction.account.transactions[:10] %}
+                                <tr class="{{ 'table-active' if t.id == transaction.id else '' }}">
+                                    <td>{{ t.transaction_date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ t.description[:30] }}{% if t.description|length > 30 %}...{% endif %}</td>
+                                    <td>
+                                        {% if t.transaction_type == 'receita' %}
+                                            <span class="badge bg-success">Receita</span>
+                                        {% elif t.transaction_type == 'despesa' %}
+                                            <span class="badge bg-danger">Despesa</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Transferência</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="{{ 'text-success' if t.transaction_type == 'receita' else 'text-danger' }}">
+                                        R$ {{ "%.2f"|format(t.amount) }}
+                                    </td>
+                                    <td>
+                                        {% if t.status == 'completed' %}
+                                            <span class="badge bg-success">Concluída</span>
+                                        {% elif t.status == 'pending' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Nenhuma transação encontrada para esta conta.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Resumo Financeiro -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Resumo Financeiro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Saldo da Conta:</small>
+                        <div class="h5 fw-bold {{ 'text-success' if transaction.account.current_balance >= 0 else 'text-danger' }}">
+                            R$ {{ "%.2f"|format(transaction.account.current_balance) }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Saldo Inicial:</small>
+                        <div>R$ {{ "%.2f"|format(transaction.account.initial_balance) }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Tipo de Conta:</small>
+                        <div>{{ transaction.account.account_type }}</div>
+                    </div>
+                    {% if transaction.account.bank_name %}
+                    <div class="mb-3">
+                        <small class="text-muted">Banco:</small>
+                        <div>{{ transaction.account.bank_name }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações do Sistema -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">ID da Transação:</small>
+                        <div>{{ transaction.id }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Criada em:</small>
+                        <div>{{ transaction.created_at.strftime('%d/%m/%Y às %H:%M') }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Registrada por:</small>
+                        <div>{{ transaction.user.username if transaction.user else 'Sistema' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('finance.transactions') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Todas as Transações
+                        </a>
+                        <a href="{{ url_for('finance.new_transaction') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus me-2"></i>Nova Transação
+                        </a>
+                        <a href="{{ url_for('finance.account_detail', id=transaction.account.id) }}" class="btn btn-outline-info">
+                            <i class="fas fa-university me-2"></i>Ver Conta
+                        </a>
+                        <a href="{{ url_for('finance.reports') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-chart-bar me-2"></i>Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta transação?</p>
+                <div class="alert alert-warning">
+                    <strong>Transação:</strong> {{ transaction.description }}<br>
+                    <strong>Valor:</strong> R$ {{ "%.2f"|format(transaction.amount) }}<br>
+                    <strong>Data:</strong> {{ transaction.transaction_date.strftime('%d/%m/%Y') }}
+                </div>
+                <p class="text-muted">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('finance.delete_transaction', id=transaction.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
+

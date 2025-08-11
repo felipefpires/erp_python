@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil - Sistema ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Meu Perfil</h1>
+    </div>
+
+    <div class="row">
+        <!-- Profile information -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Informações do Perfil
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.profile') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ current_user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Sobrenome</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ current_user.last_name }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Nome de Usuário</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ current_user.username }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ current_user.email }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Função</label>
+                                <select class="form-select" id="role" name="role">
+                                    <option value="admin" {% if current_user.role == 'admin' %}selected{% endif %}>Administrador</option>
+                                    <option value="manager" {% if current_user.role == 'manager' %}selected{% endif %}>Gerente</option>
+                                    <option value="user" {% if current_user.role == 'user' %}selected{% endif %}>Usuário</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="is_active" class="form-label">Status</label>
+                                <select class="form-select" id="is_active" name="is_active">
+                                    <option value="1" {% if current_user.is_active %}selected{% endif %}>Ativo</option>
+                                    <option value="0" {% if not current_user.is_active %}selected{% endif %}>Inativo</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile sidebar -->
+        <div class="col-lg-4">
+            <!-- User info card -->
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-circle fa-4x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">{{ current_user.first_name }} {{ current_user.last_name }}</h5>
+                    <p class="text-muted">{{ current_user.role|title }}</p>
+                    <p class="text-muted">
+                        <small>
+                            <i class="fas fa-calendar me-1"></i>
+                            Membro desde {{ current_user.created_at.strftime('%d/%m/%Y') }}
+                        </small>
+                    </p>
+                    {% if current_user.last_login %}
+                    <p class="text-muted">
+                        <small>
+                            <i class="fas fa-clock me-1"></i>
+                            Último login: {{ current_user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Change password card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        Alterar Senha
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.change_password') }}">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Senha Atual</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirmar Nova Senha</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                            <i class="fas fa-key me-1"></i>
+                            Alterar Senha
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação do formulário de perfil
+    const profileForm = document.querySelector('form[action="{{ url_for("main.profile") }}"]');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            if (!firstName || !lastName || !username || !email) {
+                e.preventDefault();
+                alert('Todos os campos obrigatórios devem ser preenchidos!');
+                return;
+            }
+            
+            if (username.length < 3) {
+                e.preventDefault();
+                alert('O nome de usuário deve ter pelo menos 3 caracteres!');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Por favor, insira um e-mail válido!');
+                return;
+            }
+        });
+    }
+    
+    // Validação do formulário de alteração de senha
+    const passwordForm = document.querySelector('form[action="{{ url_for("main.change_password") }}"]');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', function(e) {
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                e.preventDefault();
+                alert('Todos os campos de senha devem ser preenchidos!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                e.preventDefault();
+                alert('A nova senha deve ter pelo menos 6 caracteres!');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                alert('As senhas não coincidem!');
+                return;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Venda - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-plus me-2"></i>
+                Nova Venda
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.index') }}">CRM</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.sales') }}">Vendas</a></li>
+                    <li class="breadcrumb-item active">Nova Venda</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{{ url_for('crm.sales') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Voltar
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" id="saleForm">
+        <div class="row">
+            <!-- Formulário Principal -->
+            <div class="col-lg-8">
+                <!-- Informações da Venda -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Informações da Venda
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="customer_id" class="form-label">Cliente *</label>
+                                <select class="form-select" id="customer_id" name="customer_id" required>
+                                    <option value="">Selecione um cliente...</option>
+                                    {% for customer in customers %}
+                                        <option value="{{ customer.id }}" 
+                                                {% if request.args.get('customer_id')|int == customer.id %}selected{% endif %}>
+                                            {{ customer.name }}
+                                            {% if customer.company %} - {{ customer.company }}{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date" class="form-label">Data da Venda *</label>
+                                <input type="date" class="form-control" id="date" name="date" 
+                                       value="{{ today }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="pending">Pendente</option>
+                                    <option value="completed">Concluída</option>
+                                    <option value="cancelled">Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="payment_method" class="form-label">Forma de Pagamento</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="">Selecione...</option>
+                                    <option value="cash">Dinheiro</option>
+                                    <option value="credit_card">Cartão de Crédito</option>
+                                    <option value="debit_card">Cartão de Débito</option>
+                                    <option value="pix">PIX</option>
+                                    <option value="bank_transfer">Transferência Bancária</option>
+                                    <option value="check">Cheque</option>
+                                    <option value="other">Outro</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <label for="notes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Observações sobre a venda..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itens da Venda -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-shopping-basket me-2"></i>
+                            Itens da Venda
+                        </h5>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addItem()">
+                            <i class="fas fa-plus me-1"></i>Adicionar Item
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="itemsContainer">
+                            <!-- Os itens serão adicionados aqui dinamicamente -->
+                        </div>
+                        
+                        <div class="text-center mt-3" id="noItemsMessage">
+                            <i class="fas fa-shopping-basket fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Nenhum item adicionado</p>
+                            <button type="button" class="btn btn-outline-primary" onclick="addItem()">
+                                <i class="fas fa-plus me-1"></i>Adicionar Primeiro Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar com Resumo -->
+            <div class="col-lg-4">
+                <!-- Resumo da Venda -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Resumo da Venda
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-6">Subtotal:</div>
+                            <div class="col-6 text-end" id="subtotal">R$ 0,00</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6">Desconto:</div>
+                            <div class="col-6 text-end">
+                                <input type="number" class="form-control form-control-sm text-end" 
+                                       id="discount" name="discount" value="0" min="0" step="0.01" 
+                                       onchange="calculateTotal()">
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6"><strong>Total:</strong></div>
+                            <div class="col-6 text-end"><strong id="total">R$ 0,00</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Produtos Disponíveis -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-box me-2"></i>
+                            Produtos Disponíveis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="productSearch" 
+                                   placeholder="Buscar produtos...">
+                            <button class="btn btn-outline-secondary" type="button" onclick="searchProducts()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="productsList" class="list-group">
+                            {% for product in products %}
+                            <div class="list-group-item list-group-item-action" 
+                                 onclick="addProductToSale({{ product.id }}, '{{ product.name }}', {{ product.price }}, {{ product.stock_quantity }})">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ product.name }}</h6>
+                                    <small class="text-success">R$ {{ "%.2f"|format(product.price) }}</small>
+                                </div>
+                                <p class="mb-1 text-muted">{{ product.category.name if product.category else 'Sem categoria' }}</p>
+                                <small class="text-muted">
+                                    Estoque: {{ product.stock_quantity }} unidades
+                                    {% if product.stock_quantity <= 5 %}
+                                        <span class="badge bg-warning">Baixo</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success" id="saveButton" disabled>
+                                <i class="fas fa-save me-1"></i>Salvar Venda
+                            </button>
+                            <a href="{{ url_for('crm.sales') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Template para item da venda -->
+<template id="itemTemplate">
+    <div class="item-row border rounded p-3 mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label">Produto *</label>
+                <select class="form-select product-select" name="items[INDEX][product_id]" required>
+                    <option value="">Selecione um produto...</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}" data-price="{{ product.price }}" data-stock="{{ product.stock_quantity }}">
+                            {{ product.name }} - R$ {{ "%.2f"|format(product.price) }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantidade *</label>
+                <input type="number" class="form-control quantity-input" name="items[INDEX][quantity]" 
+                       value="1" min="1" required onchange="updateItemTotal(this)">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Preço Unit. *</label>
+                <input type="number" class="form-control price-input" name="items[INDEX][unit_price]" 
+                       step="0.01" min="0" required onchange="updateItemTotal(this)">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Total</label>
+                <input type="text" class="form-control item-total" readonly>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeItem(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let itemIndex = 0;
+
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const template = document.getElementById('itemTemplate');
+    const noItemsMessage = document.getElementById('noItemsMessage');
+    
+    // Esconder mensagem de "nenhum item"
+    noItemsMessage.style.display = 'none';
+    
+    // Criar novo item
+    const itemHtml = template.innerHTML.replace(/INDEX/g, itemIndex);
+    container.insertAdjacentHTML('beforeend', itemHtml);
+    
+    // Configurar o novo item
+    const newItem = container.lastElementChild;
+    const productSelect = newItem.querySelector('.product-select');
+    const priceInput = newItem.querySelector('.price-input');
+    const quantityInput = newItem.querySelector('.quantity-input');
+    
+    // Event listeners
+    productSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const price = selectedOption.dataset.price;
+        if (price) {
+            priceInput.value = price;
+            updateItemTotal(priceInput);
+        }
+    });
+    
+    itemIndex++;
+    updateSaveButton();
+}
+
+function removeItem(button) {
+    const itemRow = button.closest('.item-row');
+    itemRow.remove();
+    
+    // Verificar se ainda há itens
+    const items = document.querySelectorAll('.item-row');
+    if (items.length === 0) {
+        document.getElementById('noItemsMessage').style.display = 'block';
+    }
+    
+    calculateTotal();
+    updateSaveButton();
+}
+
+function updateItemTotal(input) {
+    const itemRow = input.closest('.item-row');
+    const quantity = itemRow.querySelector('.quantity-input').value;
+    const price = itemRow.querySelector('.price-input').value;
+    const totalInput = itemRow.querySelector('.item-total');
+    
+    const total = quantity * price;
+    totalInput.value = `R$ ${total.toFixed(2)}`;
+    
+    calculateTotal();
+}
+
+function calculateTotal() {
+    let subtotal = 0;
+    const itemTotals = document.querySelectorAll('.item-total');
+    
+    itemTotals.forEach(totalInput => {
+        const value = totalInput.value.replace('R$ ', '').replace(',', '.');
+        subtotal += parseFloat(value) || 0;
+    });
+    
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const total = subtotal - discount;
+    
+    document.getElementById('subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+    document.getElementById('total').textContent = `R$ ${total.toFixed(2)}`;
+}
+
+function addProductToSale(productId, productName, price, stock) {
+    // Adicionar item se não houver nenhum
+    const items = document.querySelectorAll('.item-row');
+    if (items.length === 0) {
+        addItem();
+    }
+    
+    // Selecionar o último item adicionado
+    const lastItem = document.querySelector('.item-row:last-child');
+    const productSelect = lastItem.querySelector('.product-select');
+    const priceInput = lastItem.querySelector('.price-input');
+    const quantityInput = lastItem.querySelector('.quantity-input');
+    
+    // Preencher os campos
+    productSelect.value = productId;
+    priceInput.value = price;
+    quantityInput.value = 1;
+    
+    // Atualizar total
+    updateItemTotal(priceInput);
+    
+    // Adicionar novo item para o próximo produto
+    addItem();
+}
+
+function searchProducts() {
+    const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+    const products = document.querySelectorAll('#productsList .list-group-item');
+    
+    products.forEach(product => {
+        const productName = product.querySelector('h6').textContent.toLowerCase();
+        if (productName.includes(searchTerm)) {
+            product.style.display = 'block';
+        } else {
+            product.style.display = 'none';
+        }
+    });
+}
+
+function updateSaveButton() {
+    const items = document.querySelectorAll('.item-row');
+    const saveButton = document.getElementById('saveButton');
+    
+    if (items.length > 0) {
+        saveButton.disabled = false;
+    } else {
+        saveButton.disabled = true;
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Busca de produtos em tempo real
+    document.getElementById('productSearch').addEventListener('input', searchProducts);
+    
+    // Validação do formulário
+    document.getElementById('saleForm').addEventListener('submit', function(e) {
+        const customerId = document.getElementById('customer_id').value;
+        const items = document.querySelectorAll('.item-row');
+        
+        if (!customerId) {
+            e.preventDefault();
+            alert('Por favor, selecione um cliente.');
+            return false;
+        }
+        
+        if (items.length === 0) {
+            e.preventDefault();
+            alert('Por favor, adicione pelo menos um item à venda.');
+            return false;
+        }
+        
+        // Validar cada item
+        let valid = true;
+        items.forEach(item => {
+            const productId = item.querySelector('.product-select').value;
+            const quantity = item.querySelector('.quantity-input').value;
+            const price = item.querySelector('.price-input').value;
+            
+            if (!productId || !quantity || !price) {
+                valid = false;
+            }
+        });
+        
+        if (!valid) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios dos itens.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+

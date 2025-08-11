@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chart-bar me-2"></i>
+                Relatórios CRM
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.index') }}">CRM</a></li>
+                    <li class="breadcrumb-item active">Relatórios</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <button type="button" class="btn btn-success" onclick="exportReport()">
+                <i class="fas fa-download me-1"></i>Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-filter me-2"></i>
+                Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="report_type" class="form-label">Tipo de Relatório</label>
+                    <select class="form-select" id="report_type" name="report_type" onchange="updateFilters()">
+                        <option value="sales_period" {% if request.args.get('report_type') == 'sales_period' %}selected{% endif %}>Vendas por Período</option>
+                        <option value="top_customers" {% if request.args.get('report_type') == 'top_customers' %}selected{% endif %}>Top Clientes</option>
+                        <option value="sales_by_status" {% if request.args.get('report_type') == 'sales_by_status' %}selected{% endif %}>Vendas por Status</option>
+                        <option value="customer_analysis" {% if request.args.get('report_type') == 'customer_analysis' %}selected{% endif %}>Análise de Clientes</option>
+                        <option value="product_performance" {% if request.args.get('report_type') == 'product_performance' %}selected{% endif %}>Performance de Produtos</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Data Inicial</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Data Final</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="limit" class="form-label">Limite</label>
+                    <select class="form-select" id="limit" name="limit">
+                        <option value="10" {% if request.args.get('limit') == '10' %}selected{% endif %}>Top 10</option>
+                        <option value="20" {% if request.args.get('limit') == '20' %}selected{% endif %}>Top 20</option>
+                        <option value="50" {% if request.args.get('limit') == '50' %}selected{% endif %}>Top 50</option>
+                        <option value="100" {% if request.args.get('limit') == '100' %}selected{% endif %}>Top 100</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Gerar Relatório
+                        </button>
+                        <a href="{{ url_for('crm.reports') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Limpar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo Estatístico -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Vendas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.total_sales }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Receita Total
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ "%.2f"|format(summary.total_revenue) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Clientes Ativos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ summary.active_customers }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Ticket Médio
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ "%.2f"|format(summary.average_ticket) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo do Relatório -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>
+                {{ report_title }}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if report_data %}
+                <!-- Vendas por Período -->
+                {% if request.args.get('report_type') == 'sales_period' %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Número de Vendas</th>
+                                    <th>Receita</th>
+                                    <th>Ticket Médio</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report_data %}
+                                <tr>
+                                    <td>{{ item.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ item.sales_count }}</td>
+                                    <td>R$ {{ "%.2f"|format(item.revenue) }}</td>
+                                    <td>R$ {{ "%.2f"|format(item.average_ticket) }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ (item.sales_count / max_sales * 100)|round(1) }}%">
+                                                {{ (item.sales_count / max_sales * 100)|round(1) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                <!-- Top Clientes -->
+                {% elif request.args.get('report_type') == 'top_customers' %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Cliente</th>
+                                    <th>Empresa</th>
+                                    <th>Total de Vendas</th>
+                                    <th>Receita Total</th>
+                                    <th>Ticket Médio</th>
+                                    <th>Última Compra</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report_data %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-primary">{{ loop.index }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.customer.name }}</strong>
+                                        <br><small class="text-muted">{{ item.customer.email or 'Email não informado' }}</small>
+                                    </td>
+                                    <td>{{ item.customer.company or 'Não informado' }}</td>
+                                    <td>{{ item.sales_count }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(item.total_revenue) }}</strong></td>
+                                    <td>R$ {{ "%.2f"|format(item.average_ticket) }}</td>
+                                    <td>{{ item.last_purchase.strftime('%d/%m/%Y') if item.last_purchase else 'Nunca' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                <!-- Vendas por Status -->
+                {% elif request.args.get('report_type') == 'sales_by_status' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Quantidade</th>
+                                            <th>Receita</th>
+                                            <th>Percentual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in report_data %}
+                                        <tr>
+                                            <td>
+                                                {% if item.status == 'completed' %}
+                                                    <span class="badge bg-success">Concluída</span>
+                                                {% elif item.status == 'pending' %}
+                                                    <span class="badge bg-warning">Pendente</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Cancelada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ item.count }}</td>
+                                            <td>R$ {{ "%.2f"|format(item.revenue) }}</td>
+                                            <td>{{ "%.1f"|format(item.percentage) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="statusChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                <!-- Análise de Clientes -->
+                {% elif request.args.get('report_type') == 'customer_analysis' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Distribuição por Status</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Quantidade</th>
+                                            <th>Percentual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in report_data.status_distribution %}
+                                        <tr>
+                                            <td>
+                                                {% if item.status == 'active' %}
+                                                    <span class="badge bg-success">Ativo</span>
+                                                {% elif item.status == 'inactive' %}
+                                                    <span class="badge bg-secondary">Inativo</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Prospecto</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ "%.1f"|format(item.percentage) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Origem dos Clientes</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Origem</th>
+                                            <th>Quantidade</th>
+                                            <th>Percentual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in report_data.source_distribution %}
+                                        <tr>
+                                            <td>{{ item.source or 'Não informado' }}</td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ "%.1f"|format(item.percentage) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Performance de Produtos -->
+                {% elif request.args.get('report_type') == 'product_performance' %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Categoria</th>
+                                    <th>Quantidade Vendida</th>
+                                    <th>Receita</th>
+                                    <th>Preço Médio</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report_data %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product.name }}</strong>
+                                        <br><small class="text-muted">ID: {{ item.product.id }}</small>
+                                    </td>
+                                    <td>{{ item.product.category.name if item.product.category else 'Sem categoria' }}</td>
+                                    <td>{{ item.quantity_sold }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(item.revenue) }}</strong></td>
+                                    <td>R$ {{ "%.2f"|format(item.average_price) }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ (item.revenue / max_revenue * 100)|round(1) }}%">
+                                                {{ (item.revenue / max_revenue * 100)|round(1) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhum dado encontrado</h5>
+                    <p class="text-muted">Selecione os filtros e gere um relatório para ver os dados.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function updateFilters() {
+    const reportType = document.getElementById('report_type').value;
+    const limitField = document.getElementById('limit');
+    const dateFields = document.querySelectorAll('#date_from, #date_to');
+    
+    // Mostrar/ocultar campos baseado no tipo de relatório
+    if (reportType === 'top_customers' || reportType === 'product_performance') {
+        limitField.parentElement.style.display = 'block';
+        dateFields.forEach(field => field.parentElement.style.display = 'block');
+    } else if (reportType === 'customer_analysis') {
+        limitField.parentElement.style.display = 'none';
+        dateFields.forEach(field => field.parentElement.style.display = 'none');
+    } else {
+        limitField.parentElement.style.display = 'none';
+        dateFields.forEach(field => field.parentElement.style.display = 'block');
+    }
+}
+
+function exportReport() {
+    const form = document.querySelector('form');
+    const exportForm = form.cloneNode(true);
+    exportForm.action = '{{ url_for("crm.export_report") }}';
+    exportForm.method = 'POST';
+    document.body.appendChild(exportForm);
+    exportForm.submit();
+    document.body.removeChild(exportForm);
+}
+
+// Inicializar filtros
+document.addEventListener('DOMContentLoaded', function() {
+    updateFilters();
+    
+    // Gráfico de status (se aplicável)
+    {% if request.args.get('report_type') == 'sales_by_status' and report_data %}
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                {% for item in report_data %}
+                    '{{ "Concluída" if item.status == "completed" else "Pendente" if item.status == "pending" else "Cancelada" }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for item in report_data %}
+                        {{ item.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    '#28a745',
+                    '#ffc107',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+

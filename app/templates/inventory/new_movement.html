@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Movimentação - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-exchange-alt me-2"></i>Nova Movimentação
+        </h1>
+        <a href="{{ url_for('inventory.movements') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>Registrar Movimentação
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product_id" class="form-label">Produto *</label>
+                                    <select class="form-select" id="product_id" name="product_id" required>
+                                        <option value="">Selecione um produto</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}" 
+                                                {{ 'selected' if request.args.get('product_id')|int == product.id }}
+                                                data-stock="{{ product.current_stock }}"
+                                                data-unit="{{ product.unit }}">
+                                            {{ product.name }} (Estoque: {{ product.current_stock }} {{ product.unit|upper }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="movement_type" class="form-label">Tipo de Movimentação *</label>
+                                    <select class="form-select" id="movement_type" name="movement_type" required>
+                                        <option value="">Selecione o tipo</option>
+                                        <option value="entrada" {{ 'selected' if request.args.get('type') == 'entrada' }}>Entrada</option>
+                                        <option value="saida" {{ 'selected' if request.args.get('type') == 'saida' }}>Saída</option>
+                                        <option value="ajuste" {{ 'selected' if request.args.get('type') == 'ajuste' }}>Ajuste</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Quantidade *</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" 
+                                           min="1" step="1" required placeholder="0">
+                                    <div class="form-text">Quantidade a ser movimentada</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="movement_date" class="form-label">Data da Movimentação</label>
+                                    <input type="datetime-local" class="form-control" id="movement_date" name="movement_date" 
+                                           value="{{ now.strftime('%Y-%m-%dT%H:%M') }}">
+                                    <div class="form-text">Data e hora da movimentação (padrão: agora)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Motivo/Justificativa</label>
+                            <textarea class="form-control" id="notes" name="notes" 
+                                      rows="3" placeholder="Descreva o motivo da movimentação..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reference" class="form-label">Referência</label>
+                                    <input type="text" class="form-control" id="reference" name="reference" 
+                                           placeholder="Ex: Nota fiscal, ordem de compra, etc.">
+                                    <div class="form-text">Documento de referência (opcional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cost" class="form-label">Custo Unitário</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="unit_cost" name="unit_cost" 
+                                               step="0.01" min="0" placeholder="0,00">
+                                    </div>
+                                    <div class="form-text">Custo por unidade (para entradas)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview da Movimentação -->
+                        <div class="alert alert-info" id="movementPreview" style="display: none;">
+                            <h6><i class="fas fa-info-circle me-2"></i>Preview da Movimentação</h6>
+                            <div id="previewContent"></div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Ações -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('inventory.movements') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Registrar Movimentação
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Informações do Produto Selecionado -->
+            <div class="card mb-4" id="productInfo" style="display: none;">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box me-2"></i>Informações do Produto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="productInfoContent"></div>
+                </div>
+            </div>
+
+            <!-- Tipos de Movimentação -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Tipos de Movimentação
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-success">
+                            <i class="fas fa-arrow-down me-2"></i>Entrada
+                        </h6>
+                        <small class="text-muted">Adiciona produtos ao estoque (compra, devolução, etc.)</small>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-danger">
+                            <i class="fas fa-arrow-up me-2"></i>Saída
+                        </h6>
+                        <small class="text-muted">Remove produtos do estoque (venda, perda, etc.)</small>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-warning">
+                            <i class="fas fa-cog me-2"></i>Ajuste
+                        </h6>
+                        <small class="text-muted">Corrige o estoque para um valor específico</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Importante</h6>
+                        <ul class="mb-0">
+                            <li>Movimentações não podem ser desfeitas</li>
+                            <li>Use "Ajuste" para corrigir divergências</li>
+                            <li>Registre sempre o motivo da movimentação</li>
+                            <li>Verifique o estoque antes de fazer saídas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Produtos disponíveis
+const products = {{ products|tojson }};
+
+// Função para atualizar informações do produto
+function updateProductInfo() {
+    const productId = document.getElementById('product_id').value;
+    const productInfo = document.getElementById('productInfo');
+    const productInfoContent = document.getElementById('productInfoContent');
+    
+    if (productId) {
+        const product = products.find(p => p.id == productId);
+        if (product) {
+            productInfoContent.innerHTML = `
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted">Nome:</td>
+                        <td class="fw-bold">${product.name}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">SKU:</td>
+                        <td>${product.sku || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Estoque Atual:</td>
+                        <td class="fw-bold text-primary">${product.current_stock} ${product.unit.toUpperCase()}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Estoque Mínimo:</td>
+                        <td>${product.min_stock} ${product.unit.toUpperCase()}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Preço de Venda:</td>
+                        <td class="text-success">R$ ${product.sale_price.toFixed(2)}</td>
+                    </tr>
+                </table>
+            `;
+            productInfo.style.display = 'block';
+        }
+    } else {
+        productInfo.style.display = 'none';
+    }
+}
+
+// Função para atualizar preview da movimentação
+function updateMovementPreview() {
+    const productId = document.getElementById('product_id').value;
+    const movementType = document.getElementById('movement_type').value;
+    const quantity = parseInt(document.getElementById('quantity').value) || 0;
+    const preview = document.getElementById('movementPreview');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (productId && movementType && quantity > 0) {
+        const product = products.find(p => p.id == productId);
+        if (product) {
+            let newStock = product.current_stock;
+            let operation = '';
+            
+            switch (movementType) {
+                case 'in':
+                    newStock += quantity;
+                    operation = 'Adicionar';
+                    break;
+                case 'out':
+                    newStock -= quantity;
+                    operation = 'Remover';
+                    break;
+                case 'adjustment':
+                    newStock = quantity;
+                    operation = 'Ajustar para';
+                    break;
+            }
+            
+            previewContent.innerHTML = `
+                <p><strong>Produto:</strong> ${product.name}</p>
+                <p><strong>Operação:</strong> ${operation} ${quantity} ${product.unit.toUpperCase()}</p>
+                <p><strong>Estoque Atual:</strong> ${product.current_stock} ${product.unit.toUpperCase()}</p>
+                <p><strong>Novo Estoque:</strong> <span class="fw-bold ${newStock < 0 ? 'text-danger' : 'text-success'}">${newStock} ${product.unit.toUpperCase()}</span></p>
+                ${newStock < 0 ? '<p class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Estoque ficará negativo!</p>' : ''}
+            `;
+            preview.style.display = 'block';
+        }
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Event listeners
+document.getElementById('product_id').addEventListener('change', function() {
+    updateProductInfo();
+    updateMovementPreview();
+});
+
+document.getElementById('movement_type').addEventListener('change', updateMovementPreview);
+document.getElementById('quantity').addEventListener('input', updateMovementPreview);
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const productId = document.getElementById('product_id').value;
+    const movementType = document.getElementById('movement_type').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    
+    if (!productId) {
+        e.preventDefault();
+        alert('Por favor, selecione um produto.');
+        document.getElementById('product_id').focus();
+        return;
+    }
+    
+    if (!movementType) {
+        e.preventDefault();
+        alert('Por favor, selecione o tipo de movimentação.');
+        document.getElementById('movement_type').focus();
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        e.preventDefault();
+        alert('Por favor, informe uma quantidade válida.');
+        document.getElementById('quantity').focus();
+        return;
+    }
+    
+    // Verificar se saída não deixará estoque negativo
+    if (movementType === 'out') {
+        const product = products.find(p => p.id == productId);
+        if (product && (product.current_stock - quantity) < 0) {
+            if (!confirm('Esta movimentação deixará o estoque negativo. Deseja continuar?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+    }
+});
+
+// Inicializar se produto já selecionado via URL
+if (document.getElementById('product_id').value) {
+    updateProductInfo();
+    updateMovementPreview();
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Conta - Finanças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-plus me-2"></i>Nova Conta
+        </h1>
+        <a href="{{ url_for('finance.accounts') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-university me-2"></i>Informações da Conta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="accountForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nome da Conta *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       required placeholder="Ex: Conta Principal">
+                                <div class="form-text">Nome para identificar a conta</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="account_type" class="form-label">Tipo de Conta *</label>
+                                <select class="form-select" id="account_type" name="account_type" required>
+                                    <option value="">Selecione o tipo</option>
+                                    <option value="banco">Conta Bancária</option>
+                                    <option value="caixa">Caixa</option>
+                                    <option value="cartao">Cartão de Crédito</option>
+                                    <option value="poupanca">Poupança</option>
+                                    <option value="investimento">Investimento</option>
+                                    <option value="outros">Outros</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bank_name" class="form-label">Nome do Banco</label>
+                                <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                       placeholder="Ex: Banco do Brasil">
+                                <div class="form-text">Opcional, para contas bancárias</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="account_number" class="form-label">Número da Conta</label>
+                                <input type="text" class="form-control" id="account_number" name="account_number" 
+                                       placeholder="Ex: 12345-6">
+                                <div class="form-text">Opcional, para contas bancárias</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="initial_balance" class="form-label">Saldo Inicial *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="initial_balance" name="initial_balance" 
+                                           step="0.01" value="0.00" required placeholder="0,00">
+                                </div>
+                                <div class="form-text">Saldo atual da conta</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="color" class="form-label">Cor da Conta</label>
+                                <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                       value="#007bff" title="Escolha uma cor para a conta">
+                                <div class="form-text">Usada para identificar visualmente a conta</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    Conta Ativa
+                                </label>
+                            </div>
+                            <div class="form-text">Contas inativas não aparecem nas listas de transações</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('finance.accounts') }}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Salvar Conta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Resumo da Conta -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Resumo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="accountSummary">
+                        <p class="text-muted">Preencha os campos para ver o resumo</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Organização</h6>
+                        <ul class="mb-0">
+                            <li>Use nomes claros para identificar suas contas</li>
+                            <li>Configure o saldo inicial correto</li>
+                            <li>Diferencie contas por tipo (banco, caixa, cartão)</li>
+                            <li>Use cores para facilitar a identificação</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Campos Obrigatórios</h6>
+                        <ul class="mb-0">
+                            <li>Nome da conta</li>
+                            <li>Tipo de conta</li>
+                            <li>Saldo inicial</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exemplos de Contas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Exemplos de Contas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Conta Principal</small><br>
+                            <small class="text-muted">Caixa</small><br>
+                            <small class="text-muted">Poupança</small><br>
+                            <small class="text-muted">Cartão Nubank</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Investimentos</small><br>
+                            <small class="text-muted">Conta Empresa</small><br>
+                            <small class="text-muted">Cartão Itaú</small><br>
+                            <small class="text-muted">Reserva</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('finance.accounts') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Todas as Contas
+                        </a>
+                        <a href="{{ url_for('finance.new_transaction') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus me-2"></i>Nova Transação
+                        </a>
+                        <a href="{{ url_for('finance.reports') }}" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i>Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Máscara para valores monetários
+document.getElementById('initial_balance').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = (parseFloat(value) / 100).toFixed(2);
+    e.target.value = value;
+});
+
+// Atualizar resumo da conta
+function updateAccountSummary() {
+    const name = document.getElementById('name').value;
+    const accountType = document.getElementById('account_type').value;
+    const bankName = document.getElementById('bank_name').value;
+    const accountNumber = document.getElementById('account_number').value;
+    const initialBalance = parseFloat(document.getElementById('initial_balance').value) || 0;
+    const summary = document.getElementById('accountSummary');
+    
+    if (name && accountType) {
+        const typeLabels = {
+            'banco': 'Conta Bancária',
+            'caixa': 'Caixa',
+            'cartao': 'Cartão de Crédito',
+            'poupanca': 'Poupança',
+            'investimento': 'Investimento',
+            'outros': 'Outros'
+        };
+        
+        summary.innerHTML = `
+            <div class="mb-3">
+                <small class="text-muted">Nome:</small>
+                <div class="fw-bold">${name}</div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">Tipo:</small>
+                <div><span class="badge bg-secondary">${typeLabels[accountType] || accountType}</span></div>
+            </div>
+            ${bankName ? `
+            <div class="mb-3">
+                <small class="text-muted">Banco:</small>
+                <div>${bankName}</div>
+            </div>
+            ` : ''}
+            ${accountNumber ? `
+            <div class="mb-3">
+                <small class="text-muted">Número:</small>
+                <div>${accountNumber}</div>
+            </div>
+            ` : ''}
+            <div class="mb-3">
+                <small class="text-muted">Saldo Inicial:</small>
+                <div class="fw-bold ${initialBalance >= 0 ? 'text-success' : 'text-danger'}">R$ ${initialBalance.toFixed(2)}</div>
+            </div>
+        `;
+    } else {
+        summary.innerHTML = '<p class="text-muted">Preencha os campos para ver o resumo</p>';
+    }
+}
+
+// Event listeners
+document.getElementById('name').addEventListener('input', updateAccountSummary);
+document.getElementById('account_type').addEventListener('change', updateAccountSummary);
+document.getElementById('bank_name').addEventListener('input', updateAccountSummary);
+document.getElementById('account_number').addEventListener('input', updateAccountSummary);
+document.getElementById('initial_balance').addEventListener('input', updateAccountSummary);
+
+// Validação do formulário
+document.getElementById('accountForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const accountType = document.getElementById('account_type').value;
+    const initialBalance = parseFloat(document.getElementById('initial_balance').value);
+    
+    if (!name) {
+        e.preventDefault();
+        alert('Por favor, informe o nome da conta.');
+        document.getElementById('name').focus();
+        return;
+    }
+    
+    if (!accountType) {
+        e.preventDefault();
+        alert('Por favor, selecione o tipo de conta.');
+        document.getElementById('account_type').focus();
+        return;
+    }
+    
+    if (isNaN(initialBalance)) {
+        e.preventDefault();
+        alert('Por favor, informe um saldo inicial válido.');
+        document.getElementById('initial_balance').focus();
+        return;
+    }
+});
+</script>
+{% endblock %}
+

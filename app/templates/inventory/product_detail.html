@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-box me-2"></i>{{ product.name }}
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('inventory.edit_product', id=product.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <a href="{{ url_for('inventory.new_movement') }}?product_id={{ product.id }}" class="btn btn-info">
+                <i class="fas fa-exchange-alt me-2"></i>Movimentar
+            </a>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                <i class="fas fa-trash me-2"></i>Excluir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações do Produto -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações do Produto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Nome:</td>
+                                    <td>{{ product.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">SKU:</td>
+                                    <td>{{ product.sku or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Código de Barras:</td>
+                                    <td>{{ product.barcode or 'Não informado' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Categoria:</td>
+                                    <td>
+                                        {% if product.category %}
+                                            <span class="badge bg-primary">{{ product.category.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Não categorizado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Unidade:</td>
+                                    <td>{{ product.unit|upper }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Preço de Custo:</td>
+                                    <td>R$ {{ "%.2f"|format(product.cost_price) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Preço de Venda:</td>
+                                    <td class="text-success fw-bold">R$ {{ "%.2f"|format(product.sale_price) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Margem:</td>
+                                    <td>
+                                        {% if product.cost_price > 0 %}
+                                            {% set margin = ((product.sale_price - product.cost_price) / product.cost_price * 100) %}
+                                            <span class="badge bg-{{ 'success' if margin > 0 else 'danger' }}">
+                                                {{ "%.1f"|format(margin) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Status:</td>
+                                    <td>
+                                        {% if product.is_active %}
+                                            <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if product.description %}
+                    <div class="mt-3">
+                        <h6>Descrição:</h6>
+                        <p class="text-muted">{{ product.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Controle de Estoque -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>Controle de Estoque
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-primary mb-1">{{ product.current_stock }}</h3>
+                                <small class="text-muted">Estoque Atual</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-warning mb-1">{{ product.min_stock }}</h3>
+                                <small class="text-muted">Estoque Mínimo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-info mb-1">{{ product.max_stock or 'N/A' }}</h3>
+                                <small class="text-muted">Estoque Máximo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <h3 class="text-{{ 'success' if product.current_stock > product.min_stock else 'danger' }} mb-1">
+                                    {{ product.stock_status }}
+                                </h3>
+                                <small class="text-muted">Status</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progresso do Estoque -->
+                    {% if product.max_stock and product.max_stock > 0 %}
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>Utilização do Estoque</small>
+                            <small>{{ "%.1f"|format((product.current_stock / product.max_stock) * 100) }}%</small>
+                        </div>
+                        <div class="progress">
+                            {% set percentage = (product.current_stock / product.max_stock) * 100 %}
+                            <div class="progress-bar bg-{{ 'success' if percentage < 80 else 'warning' if percentage < 95 else 'danger' }}" 
+                                 style="width: {{ percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Histórico de Movimentações -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Histórico de Movimentações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if movements %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Quantidade</th>
+                                    <th>Motivo</th>
+                                    <th>Usuário</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movement in movements %}
+                                <tr>
+                                    <td>{{ movement.movement_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if movement.movement_type == 'in' %}
+                                            <span class="badge bg-success">Entrada</span>
+                                        {% elif movement.movement_type == 'out' %}
+                                            <span class="badge bg-danger">Saída</span>
+                                        {% elif movement.movement_type == 'adjustment' %}
+                                            <span class="badge bg-warning">Ajuste</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold {{ 'text-success' if movement.movement_type == 'in' else 'text-danger' }}">
+                                            {{ '+' if movement.movement_type == 'in' else '-' }}{{ movement.quantity }}
+                                        </span>
+                                    </td>
+                                    <td>{{ movement.reason or 'N/A' }}</td>
+                                    <td>{{ movement.user.username if movement.user else 'Sistema' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Nenhuma movimentação registrada para este produto.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Ações Rápidas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('inventory.new_movement') }}?product_id={{ product.id }}&type=in" 
+                           class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Entrada de Estoque
+                        </a>
+                        <a href="{{ url_for('inventory.new_movement') }}?product_id={{ product.id }}&type=out" 
+                           class="btn btn-danger">
+                            <i class="fas fa-minus me-2"></i>Saída de Estoque
+                        </a>
+                        <a href="{{ url_for('inventory.new_movement') }}?product_id={{ product.id }}&type=adjustment" 
+                           class="btn btn-warning">
+                            <i class="fas fa-cog me-2"></i>Ajuste de Estoque
+                        </a>
+                        <a href="{{ url_for('crm.new_sale') }}?product_id={{ product.id }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-shopping-cart me-2"></i>Vender Produto
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações do Sistema -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td class="text-muted">ID:</td>
+                            <td>{{ product.id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Criado em:</td>
+                            <td>{{ product.created_at.strftime('%d/%m/%Y %H:%M') if product.created_at else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Atualizado em:</td>
+                            <td>{{ product.updated_at.strftime('%d/%m/%Y %H:%M') if product.updated_at else 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            {% if product.current_stock <= product.min_stock %}
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Alerta de Estoque</h6>
+                <p class="mb-0">O estoque atual está abaixo do mínimo recomendado.</p>
+            </div>
+            {% endif %}
+
+            {% if product.max_stock and product.current_stock >= product.max_stock %}
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>Estoque Máximo</h6>
+                <p class="mb-0">O estoque atual atingiu a capacidade máxima.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    console.log('Função confirmDelete chamada!');
+    console.log('ID do produto:', {{ product.id }});
+    
+    if (confirm('Tem certeza que deseja excluir o produto "{{ product.name }}"? Esta ação não pode ser desfeita.')) {
+        console.log('Usuário confirmou exclusão');
+        
+        fetch(`/inventory/products/{{ product.id }}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            console.log('Resposta recebida:', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Dados recebidos:', data);
+            if (data.success) {
+                alert('Produto excluído com sucesso!');
+                window.location.href = '/inventory/products';
+            } else {
+                alert('Erro ao excluir produto: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro na requisição:', error);
+            alert('Erro ao excluir produto');
+        });
+    } else {
+        console.log('Usuário cancelou exclusão');
+    }
+}
+
+// Teste se o script está carregado
+console.log('Script de exclusão carregado!');
+</script>
+{% endblock %}
+

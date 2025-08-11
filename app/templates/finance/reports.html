@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - Finanças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-bar me-2"></i>Relatórios Financeiros
+        </h1>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="exportToCSV()">
+                <i class="fas fa-download me-2"></i>Exportar CSV
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" id="reportForm">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="start_date" class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ request.args.get('start_date', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="end_date" class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ request.args.get('end_date', '') }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="account_id" class="form-label">Conta</label>
+                        <select class="form-select" id="account_id" name="account_id">
+                            <option value="">Todas as contas</option>
+                            {% for account in accounts %}
+                            <option value="{{ account.id }}" {{ 'selected' if request.args.get('account_id')|int == account.id else '' }}>
+                                {{ account.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="transaction_type" class="form-label">Tipo</label>
+                        <select class="form-select" id="transaction_type" name="transaction_type">
+                            <option value="">Todos os tipos</option>
+                            <option value="receita" {{ 'selected' if request.args.get('transaction_type') == 'receita' else '' }}>Receitas</option>
+                            <option value="despesa" {{ 'selected' if request.args.get('transaction_type') == 'despesa' else '' }}>Despesas</option>
+                            <option value="transferencia" {{ 'selected' if request.args.get('transaction_type') == 'transferencia' else '' }}>Transferências</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo Financeiro -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(total_income) }}</h4>
+                            <small>Total de Receitas</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-up fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(total_expenses) }}</h4>
+                            <small>Total de Despesas</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-down fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(net_income) }}</h4>
+                            <small>Resultado Líquido</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ total_transactions }}</h4>
+                            <small>Total de Transações</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-receipt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico de Receitas vs Despesas -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Receitas vs Despesas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="incomeExpenseChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Fluxo de Caixa -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Fluxo de Caixa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="cashFlowChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faturas Vencidas -->
+    {% if overdue_invoices %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Faturas Vencidas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Vencimento</th>
+                            <th>Valor</th>
+                            <th>Dias Vencida</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in overdue_invoices %}
+                        <tr>
+                            <td>{{ invoice.invoice_number }}</td>
+                            <td>{{ invoice.customer.name }}</td>
+                            <td>{{ invoice.due_date.strftime('%d/%m/%Y') }}</td>
+                            <td class="fw-bold">R$ {{ "%.2f"|format(invoice.total_amount) }}</td>
+                            <td>
+                                <span class="badge bg-danger">{{ (today - invoice.due_date).days }} dias</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('finance.invoice_detail', id=invoice.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Relatório Detalhado -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>Relatório Detalhado
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if income_report or expense_report %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Conta</th>
+                            <th>Tipo</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in income_report %}
+                        <tr class="table-success">
+                            <td>{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td>{{ transaction.category or 'N/A' }}</td>
+                            <td>{{ transaction.account.name }}</td>
+                            <td><span class="badge bg-success">Receita</span></td>
+                            <td class="text-success">R$ {{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>
+                                {% if transaction.status == 'completed' %}
+                                    <span class="badge bg-success">Concluída</span>
+                                {% elif transaction.status == 'pending' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Cancelada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% for transaction in expense_report %}
+                        <tr class="table-danger">
+                            <td>{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td>{{ transaction.category or 'N/A' }}</td>
+                            <td>{{ transaction.account.name }}</td>
+                            <td><span class="badge bg-danger">Despesa</span></td>
+                            <td class="text-danger">R$ {{ "%.2f"|format(transaction.amount) }}</td>
+                            <td>
+                                {% if transaction.status == 'completed' %}
+                                    <span class="badge bg-success">Concluída</span>
+                                {% elif transaction.status == 'pending' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Cancelada</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum dado encontrado</h5>
+                <p class="text-muted">Selecione um período para visualizar os relatórios.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Receitas vs Despesas
+const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+const incomeExpenseChart = new Chart(incomeExpenseCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Receitas', 'Despesas'],
+        datasets: [{
+            data: [{{ total_income }}, {{ total_expenses }}],
+            backgroundColor: ['#28a745', '#dc3545'],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Fluxo de Caixa
+const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+const cashFlowChart = new Chart(cashFlowCtx, {
+    type: 'line',
+    data: {
+        labels: [{% for item in cash_flow %}'{{ item.date.strftime('%d/%m') }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Fluxo de Caixa',
+            data: [{% for item in cash_flow %}{{ item.amount }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Exportar para CSV
+function exportToCSV() {
+    const table = document.getElementById('reportTable');
+    if (!table) {
+        alert('Nenhum dado disponível para exportar.');
+        return;
+    }
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            let text = cols[j].innerText.replace(/"/g, '""');
+            row.push('"' + text + '"');
+        }
+        
+        csv.push(row.join(','));
+    }
+    
+    const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'relatorio_financeiro.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Auto-submit do formulário quando mudar os filtros
+document.getElementById('start_date').addEventListener('change', function() {
+    document.getElementById('reportForm').submit();
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    document.getElementById('reportForm').submit();
+});
+
+document.getElementById('account_id').addEventListener('change', function() {
+    document.getElementById('reportForm').submit();
+});
+
+document.getElementById('transaction_type').addEventListener('change', function() {
+    document.getElementById('reportForm').submit();
+});
+</script>
+{% endblock %}
+

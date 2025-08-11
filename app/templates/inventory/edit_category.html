@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Categoria - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-edit me-2"></i>Editar Categoria
+        </h1>
+        <a href="{{ url_for('inventory.categories') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tag me-2"></i>
+                        Informações da Categoria
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nome da Categoria *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ category.name }}" required>
+                                <div class="form-text">Nome único para identificar a categoria</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="slug" class="form-label">Slug</label>
+                                <input type="text" class="form-control" id="slug" name="slug" 
+                                       value="{{ category.slug }}" placeholder="nome-da-categoria">
+                                <div class="form-text">URL amigável (opcional, será gerado automaticamente)</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Descreva a categoria...">{{ category.description or '' }}</textarea>
+                            <div class="form-text">Descrição opcional para melhor organização</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                       {{ 'checked' if category.is_active else '' }}>
+                                <label class="form-check-label" for="is_active">
+                                    Categoria Ativa
+                                </label>
+                            </div>
+                            <div class="form-text">Categorias inativas não aparecerão nas listas de produtos</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('inventory.categories') }}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Informações da Categoria -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Criada em:</small>
+                        <div>{{ category.created_at.strftime('%d/%m/%Y às %H:%M') if category.created_at else 'N/A' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Status:</small>
+                        <div>
+                            {% if category.is_active %}
+                                <span class="badge bg-success">Ativa</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativa</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Produtos associados:</small>
+                        <div>
+                            <span class="badge bg-primary">{{ category.products|length }}</span>
+                            {% if category.products %}
+                                <small class="text-muted">produtos</small>
+                            {% else %}
+                                <small class="text-warning">nenhum produto</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('inventory.categories') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Todas as Categorias
+                        </a>
+                        <a href="{{ url_for('inventory.new_category') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus me-2"></i>Nova Categoria
+                        </a>
+                        {% if not category.products %}
+                        <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                            <i class="fas fa-trash me-2"></i>Excluir Categoria
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-secondary" disabled>
+                            <i class="fas fa-trash me-2"></i>Não pode excluir (tem produtos)
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a categoria <strong>{{ category.name }}</strong>?</p>
+                <p class="text-muted">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('inventory.delete_category', id=category.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-gerar slug baseado no nome
+document.getElementById('name').addEventListener('input', function() {
+    const name = this.value;
+    const slug = name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+        .replace(/\s+/g, '-') // Substitui espaços por hífens
+        .replace(/-+/g, '-') // Remove hífens duplicados
+        .trim('-'); // Remove hífens no início e fim
+    
+    document.getElementById('slug').value = slug;
+});
+
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
+

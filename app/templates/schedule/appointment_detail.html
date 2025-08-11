@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+
+{% block title %}{{ appointment.title }} - Detalhes do Agendamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{{ appointment.title }}</h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('schedule.edit_appointment', id=appointment.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i>
+                Editar
+            </a>
+            <button type="button" class="btn btn-danger" onclick="deleteAppointment({{ appointment.id }})">
+                <i class="fas fa-trash me-1"></i>
+                Excluir
+            </button>
+            <a href="{{ url_for('schedule.appointments') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Appointment details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Informações do Agendamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Título</label>
+                                <p class="mb-0">{{ appointment.title }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <p class="mb-0">
+                                    {% if appointment.appointment_type == 'consulta' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-stethoscope me-1"></i>
+                                            Consulta
+                                        </span>
+                                    {% elif appointment.appointment_type == 'reuniao' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-users me-1"></i>
+                                            Reunião
+                                        </span>
+                                    {% elif appointment.appointment_type == 'visita' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            Visita
+                                        </span>
+                                    {% elif appointment.appointment_type == 'apresentacao' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-presentation me-1"></i>
+                                            Apresentação
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Outro
+                                        </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if appointment.description %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição</label>
+                        <p class="mb-0">{{ appointment.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Data e Hora</label>
+                                <p class="mb-0">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ appointment.appointment_date.strftime('%d/%m/%Y') }}
+                                    <br>
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ appointment.appointment_date.strftime('%H:%M') }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Duração</label>
+                                <p class="mb-0">
+                                    <i class="fas fa-hourglass-half me-1"></i>
+                                    {{ appointment.duration_minutes }} minutos
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Local</label>
+                                <p class="mb-0">
+                                    {% if appointment.location %}
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        {{ appointment.location }}
+                                    {% else %}
+                                        <span class="text-muted">Não definido</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <p class="mb-0">
+                                    {% if appointment.status == 'scheduled' %}
+                                        <span class="badge bg-primary">Agendado</span>
+                                    {% elif appointment.status == 'confirmed' %}
+                                        <span class="badge bg-success">Confirmado</span>
+                                    {% elif appointment.status == 'completed' %}
+                                        <span class="badge bg-info">Concluído</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cancelado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if appointment.notes %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observações</label>
+                        <p class="mb-0">{{ appointment.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Customer information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Informações do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nome</label>
+                                <p class="mb-0">{{ appointment.customer.name }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Email</label>
+                                <p class="mb-0">
+                                    <a href="mailto:{{ appointment.customer.email }}">{{ appointment.customer.email }}</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Telefone</label>
+                                <p class="mb-0">
+                                    {% if appointment.customer.phone %}
+                                        <a href="tel:{{ appointment.customer.phone }}">{{ appointment.customer.phone }}</a>
+                                    {% else %}
+                                        <span class="text-muted">Não informado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status do Cliente</label>
+                                <p class="mb-0">
+                                    {% if appointment.customer.status == 'active' %}
+                                        <span class="badge bg-success">Ativo</span>
+                                    {% elif appointment.customer.status == 'inactive' %}
+                                        <span class="badge bg-secondary">Inativo</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Prospecto</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('crm.customer_detail', id=appointment.customer.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Cliente Completo
+                        </a>
+                        <a href="mailto:{{ appointment.customer.email }}" class="btn btn-outline-info">
+                            <i class="fas fa-envelope me-1"></i>
+                            Enviar Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointment timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Linha do Tempo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Agendamento Criado</h6>
+                                <p class="text-muted mb-0">{{ appointment.created_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if appointment.appointment_date > appointment.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Agendamento Programado</h6>
+                                <p class="text-muted mb-0">Para {{ appointment.appointment_date.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if appointment.status == 'confirmed' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Agendamento Confirmado</h6>
+                                <p class="text-muted mb-0">Cliente confirmou presença</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if appointment.status == 'completed' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Agendamento Concluído</h6>
+                                <p class="text-muted mb-0">Reunião/consulta realizada</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if appointment.status == 'scheduled' %}
+                        <button type="button" class="btn btn-success" onclick="confirmAppointment({{ appointment.id }})">
+                            <i class="fas fa-check me-1"></i>
+                            Confirmar Agendamento
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="markAsCompleted({{ appointment.id }})">
+                            <i class="fas fa-flag-checkered me-1"></i>
+                            Marcar como Concluído
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelAppointment({{ appointment.id }})">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar Agendamento
+                        </button>
+                        {% elif appointment.status == 'confirmed' %}
+                        <button type="button" class="btn btn-info" onclick="markAsCompleted({{ appointment.id }})">
+                            <i class="fas fa-flag-checkered me-1"></i>
+                            Marcar como Concluído
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelAppointment({{ appointment.id }})">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar Agendamento
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('schedule.edit_appointment', id=appointment.id) }}" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar Agendamento
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-primary" onclick="addToCalendar()">
+                            <i class="fas fa-calendar-plus me-1"></i>
+                            Adicionar ao Calendário
+                        </button>
+                        
+                        <a href="mailto:{{ appointment.customer.email }}?subject=Agendamento: {{ appointment.title }}" class="btn btn-outline-info">
+                            <i class="fas fa-envelope me-1"></i>
+                            Enviar Lembrete
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointment status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Status do Agendamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set now = moment().datetime %}
+                    {% if appointment.status == 'scheduled' %}
+                        {% if appointment.appointment_date > now %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-clock me-1"></i>
+                                <strong>Agendado</strong><br>
+                                Agendamento programado para o futuro
+                            </div>
+                        {% elif appointment.appointment_date <= now and appointment.appointment_date + timedelta(minutes=appointment.duration_minutes) >= now %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-play me-1"></i>
+                                <strong>Em Andamento</strong><br>
+                                Agendamento acontecendo agora
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>Atrasado</strong><br>
+                                Agendamento deveria ter começado
+                            </div>
+                        {% endif %}
+                    {% elif appointment.status == 'confirmed' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>Confirmado</strong><br>
+                            Cliente confirmou presença
+                        </div>
+                    {% elif appointment.status == 'completed' %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-flag-checkered me-1"></i>
+                            <strong>Concluído</strong><br>
+                            Agendamento finalizado
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-ban me-1"></i>
+                            <strong>Cancelado</strong><br>
+                            Agendamento foi cancelado
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Appointment metadata -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>
+                        Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>ID:</strong> {{ appointment.id }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Criado em:</strong><br>
+                            {{ appointment.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Responsável:</strong><br>
+                            {{ appointment.user.name if appointment.user else 'Sistema' }}
+                        </div>
+                        {% if appointment.reminder_sent %}
+                        <div class="mb-2">
+                            <strong>Lembrete:</strong><br>
+                            <span class="text-success">Enviado</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+</style>
+
+<script>
+function deleteAppointment(appointmentId) {
+    if (confirm('Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.')) {
+        fetch(`/schedule/appointments/${appointmentId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/schedule/appointments';
+            } else {
+                alert('Erro ao excluir agendamento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir agendamento');
+        });
+    }
+}
+
+function confirmAppointment(appointmentId) {
+    if (confirm('Confirmar este agendamento?')) {
+        fetch(`/schedule/appointments/${appointmentId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao confirmar agendamento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao confirmar agendamento');
+        });
+    }
+}
+
+function markAsCompleted(appointmentId) {
+    if (confirm('Marcar este agendamento como concluído?')) {
+        fetch(`/schedule/appointments/${appointmentId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao marcar como concluído: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao marcar como concluído');
+        });
+    }
+}
+
+function cancelAppointment(appointmentId) {
+    if (confirm('Cancelar este agendamento?')) {
+        fetch(`/schedule/appointments/${appointmentId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao cancelar agendamento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao cancelar agendamento');
+        });
+    }
+}
+
+function addToCalendar() {
+    const appointment = {
+        title: '{{ appointment.title }}',
+        start: '{{ appointment.appointment_date.isoformat() }}',
+        end: '{{ (appointment.appointment_date + timedelta(minutes=appointment.duration_minutes)).isoformat() }}',
+        description: '{{ appointment.description or "" }}',
+        location: '{{ appointment.location or "" }}'
+    };
+    
+    // Create calendar event URL
+    const calendarUrl = `data:text/calendar;charset=utf8,BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART:${appointment.start.replace(/[-:]/g, '').replace(/\.\d{3}/, '')}Z
+DTEND:${appointment.end.replace(/[-:]/g, '').replace(/\.\d{3}/, '')}Z
+SUMMARY:${appointment.title}
+DESCRIPTION:${appointment.description}
+LOCATION:${appointment.location}
+END:VEVENT
+END:VCALENDAR`;
+    
+    // Download the file
+    const link = document.createElement('a');
+    link.href = calendarUrl;
+    link.download = 'agendamento.ics';
+    link.click();
+}
+</script>
+{% endblock %}
+

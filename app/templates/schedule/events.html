@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos - Agendamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Eventos</h1>
+        <a href="{{ url_for('schedule.new_event') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Novo Evento
+        </a>
+    </div>
+
+    <!-- Search and filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request.args.get('search', '') }}" placeholder="Título ou descrição">
+                </div>
+                <div class="col-md-2">
+                    <label for="event_type" class="form-label">Tipo</label>
+                    <select class="form-select" id="event_type" name="event_type">
+                        <option value="">Todos</option>
+                        <option value="meeting" {% if request.args.get('event_type') == 'meeting' %}selected{% endif %}>Reunião</option>
+                        <option value="call" {% if request.args.get('event_type') == 'call' %}selected{% endif %}>Chamada</option>
+                        <option value="task" {% if request.args.get('event_type') == 'task' %}selected{% endif %}>Tarefa</option>
+                        <option value="reminder" {% if request.args.get('event_type') == 'reminder' %}selected{% endif %}>Lembrete</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="priority" class="form-label">Prioridade</label>
+                    <select class="form-select" id="priority" name="priority">
+                        <option value="">Todas</option>
+                        <option value="low" {% if request.args.get('priority') == 'low' %}selected{% endif %}>Baixa</option>
+                        <option value="normal" {% if request.args.get('priority') == 'normal' %}selected{% endif %}>Normal</option>
+                        <option value="high" {% if request.args.get('priority') == 'high' %}selected{% endif %}>Alta</option>
+                        <option value="urgent" {% if request.args.get('priority') == 'urgent' %}selected{% endif %}>Urgente</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos</option>
+                        <option value="scheduled" {% if request.args.get('status') == 'scheduled' %}selected{% endif %}>Agendado</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Concluído</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Período</label>
+                    <select class="form-select" id="date_range" name="date_range">
+                        <option value="">Todos</option>
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Hoje</option>
+                        <option value="week" {% if request.args.get('date_range') == 'week' %}selected{% endif %}>Esta Semana</option>
+                        <option value="month" {% if request.args.get('date_range') == 'month' %}selected{% endif %}>Este Mês</option>
+                        <option value="upcoming" {% if request.args.get('date_range') == 'upcoming' %}selected{% endif %}>Próximos</option>
+                        <option value="past" {% if request.args.get('date_range') == 'past' %}selected{% endif %}>Passados</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{{ url_for('schedule.events') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Eventos</h6>
+                            <h4 class="mb-0">{{ events.total }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Agendados</h6>
+                            <h4 class="mb-0">{{ events.items|selectattr('status', 'equalto', 'scheduled')|list|length }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Concluídos</h6>
+                            <h4 class="mb-0">{{ events.items|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Urgentes</h6>
+                            <h4 class="mb-0">{{ events.items|selectattr('priority', 'equalto', 'urgent')|list|length }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events table -->
+    <div class="card">
+        <div class="card-body">
+            {% if events.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Data/Hora</th>
+                                <th>Local</th>
+                                <th>Prioridade</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in events.items %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <div class="fw-bold">{{ event.title }}</div>
+                                        {% if event.description %}
+                                            <small class="text-muted">{{ event.description[:50] }}{% if event.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if event.event_type == 'meeting' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-users me-1"></i>
+                                            Reunião
+                                        </span>
+                                    {% elif event.event_type == 'call' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-phone me-1"></i>
+                                            Chamada
+                                        </span>
+                                    {% elif event.event_type == 'task' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-tasks me-1"></i>
+                                            Tarefa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-bell me-1"></i>
+                                            Lembrete
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold">{{ event.start_date.strftime('%d/%m/%Y') }}</span>
+                                        <small class="text-muted">
+                                            {{ event.start_date.strftime('%H:%M') }} - {{ event.end_date.strftime('%H:%M') }}
+                                            {% if event.is_all_day %}(Dia inteiro){% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if event.location %}
+                                        <span class="text-muted">{{ event.location }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if event.priority == 'urgent' %}
+                                        <span class="badge bg-danger">Urgente</span>
+                                    {% elif event.priority == 'high' %}
+                                        <span class="badge bg-warning">Alta</span>
+                                    {% elif event.priority == 'low' %}
+                                        <span class="badge bg-secondary">Baixa</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if event.status == 'scheduled' %}
+                                        <span class="badge bg-primary">Agendado</span>
+                                    {% elif event.status == 'completed' %}
+                                        <span class="badge bg-success">Concluído</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('schedule.event_detail', id=event.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('schedule.edit_event', id=event.id) }}" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteEvent({{ event.id }})" title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if events.pages > 1 %}
+                <nav aria-label="Navegação de páginas" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if events.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('schedule.events', page=events.prev_num, **request.args) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in events.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != events.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('schedule.events', page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if events.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('schedule.events', page=events.next_num, **request.args) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhum evento encontrado</h5>
+                    <p class="text-muted">Comece criando seu primeiro evento.</p>
+                    <a href="{{ url_for('schedule.new_event') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        Novo Evento
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteEvent(eventId) {
+    if (confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
+        fetch(`/schedule/events/${eventId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao excluir evento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir evento');
+        });
+    }
+}
+</script>
+{% endblock %}
+

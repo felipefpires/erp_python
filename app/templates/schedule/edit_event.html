@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Evento - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Editar Evento</h1>
+        <a href="{{ url_for('schedule.event_detail', id=event.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Event form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Informações do Evento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="eventForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Título do Evento *</label>
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           value="{{ event.title }}" required maxlength="200" placeholder="Digite o título do evento">
+                                    <div class="form-text">Nome ou título que identifica o evento</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="event_type" class="form-label">Tipo de Evento</label>
+                                    <select class="form-select" id="event_type" name="event_type">
+                                        <option value="meeting" {% if event.event_type == 'meeting' %}selected{% endif %}>Reunião</option>
+                                        <option value="call" {% if event.event_type == 'call' %}selected{% endif %}>Chamada</option>
+                                        <option value="task" {% if event.event_type == 'task' %}selected{% endif %}>Tarefa</option>
+                                        <option value="reminder" {% if event.event_type == 'reminder' %}selected{% endif %}>Lembrete</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Descreva os detalhes do evento">{{ event.description or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Data e Hora de Início *</label>
+                                    <input type="datetime-local" class="form-control" id="start_date" name="start_date" 
+                                           value="{{ event.start_date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">Data e Hora de Fim *</label>
+                                    <input type="datetime-local" class="form-control" id="end_date" name="end_date" 
+                                           value="{{ event.end_date.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Local</label>
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           value="{{ event.location or '' }}" placeholder="Local do evento">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="priority" class="form-label">Prioridade</label>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="low" {% if event.priority == 'low' %}selected{% endif %}>Baixa</option>
+                                        <option value="normal" {% if event.priority == 'normal' %}selected{% endif %}>Normal</option>
+                                        <option value="high" {% if event.priority == 'high' %}selected{% endif %}>Alta</option>
+                                        <option value="urgent" {% if event.priority == 'urgent' %}selected{% endif %}>Urgente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reminder_minutes" class="form-label">Lembrete (minutos antes)</label>
+                                    <select class="form-select" id="reminder_minutes" name="reminder_minutes">
+                                        <option value="5" {% if event.reminder_minutes == 5 %}selected{% endif %}>5 minutos</option>
+                                        <option value="15" {% if event.reminder_minutes == 15 %}selected{% endif %}>15 minutos</option>
+                                        <option value="30" {% if event.reminder_minutes == 30 %}selected{% endif %}>30 minutos</option>
+                                        <option value="60" {% if event.reminder_minutes == 60 %}selected{% endif %}>1 hora</option>
+                                        <option value="1440" {% if event.reminder_minutes == 1440 %}selected{% endif %}>1 dia</option>
+                                        <option value="0" {% if event.reminder_minutes == 0 %}selected{% endif %}>Sem lembrete</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="scheduled" {% if event.status == 'scheduled' %}selected{% endif %}>Agendado</option>
+                                        <option value="completed" {% if event.status == 'completed' %}selected{% endif %}>Concluído</option>
+                                        <option value="cancelled" {% if event.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_all_day" name="is_all_day" 
+                                       {% if event.is_all_day %}checked{% endif %}>
+                                <label class="form-check-label" for="is_all_day">
+                                    Evento de dia inteiro
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Event preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-eye me-2"></i>
+                        Prévia do Evento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="eventPreview">
+                        <div class="border rounded p-3">
+                            <h6 class="fw-bold mb-2">{{ event.title }}</h6>
+                            <p class="text-muted small mb-2">{{ event.description or 'Sem descrição' }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                {% if event.event_type == 'meeting' %}
+                                    <span class="badge bg-primary">Reunião</span>
+                                {% elif event.event_type == 'call' %}
+                                    <span class="badge bg-info">Chamada</span>
+                                {% elif event.event_type == 'task' %}
+                                    <span class="badge bg-warning">Tarefa</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Lembrete</span>
+                                {% endif %}
+                                
+                                {% if event.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgente</span>
+                                {% elif event.priority == 'high' %}
+                                    <span class="badge bg-warning">Alta</span>
+                                {% elif event.priority == 'low' %}
+                                    <span class="badge bg-secondary">Baixa</span>
+                                {% else %}
+                                    <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="small text-muted">
+                                <div><i class="fas fa-calendar me-1"></i> {{ event.start_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                                <div><i class="fas fa-clock me-1"></i> {{ event.end_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                                <div><i class="fas fa-map-marker-alt me-1"></i> {{ event.location or 'Local não definido' }}</div>
+                                {% if event.is_all_day %}<div><i class="fas fa-sun me-1"></i> Dia inteiro</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original event info -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informações Originais
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>Criado em:</strong><br>
+                            {{ event.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Responsável:</strong><br>
+                            {{ event.user.name if event.user else 'Sistema' }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>ID do Evento:</strong><br>
+                            {{ event.id }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('schedule.event_detail', id=event.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Detalhes
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteEvent({{ event.id }})">
+                            <i class="fas fa-trash me-1"></i>
+                            Excluir Evento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update preview when form changes
+document.getElementById('eventForm').addEventListener('input', updatePreview);
+
+function updatePreview() {
+    const title = document.getElementById('title').value || 'Título do Evento';
+    const description = document.getElementById('description').value || 'Sem descrição';
+    const eventType = document.getElementById('event_type').value;
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const location = document.getElementById('location').value || 'Local não definido';
+    const priority = document.getElementById('priority').value;
+    const isAllDay = document.getElementById('is_all_day').checked;
+    
+    const typeLabels = {
+        'meeting': 'Reunião',
+        'call': 'Chamada',
+        'task': 'Tarefa',
+        'reminder': 'Lembrete'
+    };
+    
+    const priorityLabels = {
+        'low': 'Baixa',
+        'normal': 'Normal',
+        'high': 'Alta',
+        'urgent': 'Urgente'
+    };
+    
+    const priorityColors = {
+        'low': 'secondary',
+        'normal': 'success',
+        'high': 'warning',
+        'urgent': 'danger'
+    };
+    
+    let previewHtml = `
+        <div class="border rounded p-3">
+            <h6 class="fw-bold mb-2">${title}</h6>
+            <p class="text-muted small mb-2">${description}</p>
+            
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary">${typeLabels[eventType]}</span>
+                <span class="badge bg-${priorityColors[priority]}">${priorityLabels[priority]}</span>
+            </div>
+            
+            <div class="small text-muted">
+                <div><i class="fas fa-calendar me-1"></i> ${startDate ? new Date(startDate).toLocaleString('pt-BR') : 'Data não definida'}</div>
+                <div><i class="fas fa-clock me-1"></i> ${endDate ? new Date(endDate).toLocaleString('pt-BR') : 'Data não definida'}</div>
+                <div><i class="fas fa-map-marker-alt me-1"></i> ${location}</div>
+                ${isAllDay ? '<div><i class="fas fa-sun me-1"></i> Dia inteiro</div>' : ''}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('eventPreview').innerHTML = previewHtml;
+}
+
+// Form validation
+document.getElementById('eventForm').addEventListener('submit', function(e) {
+    const startDate = new Date(document.getElementById('start_date').value);
+    const endDate = new Date(document.getElementById('end_date').value);
+    
+    if (endDate <= startDate) {
+        e.preventDefault();
+        alert('A data/hora de fim deve ser posterior à data/hora de início.');
+        return false;
+    }
+    
+    if (!document.getElementById('title').value.trim()) {
+        e.preventDefault();
+        alert('O título do evento é obrigatório.');
+        return false;
+    }
+});
+
+// All day event handling
+document.getElementById('is_all_day').addEventListener('change', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    if (this.checked) {
+        // Set to start of day and end of day
+        const startDate = new Date(startDateInput.value);
+        startDate.setHours(0, 0, 0, 0);
+        
+        const endDate = new Date(startDateInput.value);
+        endDate.setHours(23, 59, 59, 999);
+        
+        startDateInput.value = startDate.toISOString().slice(0, 16);
+        endDateInput.value = endDate.toISOString().slice(0, 16);
+    }
+    
+    updatePreview();
+});
+
+function deleteEvent(eventId) {
+    if (confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
+        fetch(`/schedule/events/${eventId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/schedule/events';
+            } else {
+                alert('Erro ao excluir evento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir evento');
+        });
+    }
+}
+</script>
+{% endblock %}
+

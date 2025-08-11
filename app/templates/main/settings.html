@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações - Sistema ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Configurações do Sistema</h1>
+    </div>
+
+    <div class="row">
+        <!-- System settings -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>
+                        Configurações Gerais
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.settings') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="company_name" class="form-label">Nome da Empresa</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" 
+                                       value="{{ settings.company_name if settings else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="company_email" class="form-label">E-mail da Empresa</label>
+                                <input type="email" class="form-control" id="company_email" name="company_email" 
+                                       value="{{ settings.company_email if settings else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="company_phone" class="form-label">Telefone da Empresa</label>
+                                <input type="text" class="form-control" id="company_phone" name="company_phone" 
+                                       value="{{ settings.company_phone if settings else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="company_address" class="form-label">Endereço da Empresa</label>
+                                <input type="text" class="form-control" id="company_address" name="company_address" 
+                                       value="{{ settings.company_address if settings else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="currency" class="form-label">Moeda</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="BRL" {% if settings and settings.currency == 'BRL' %}selected{% endif %}>Real (R$)</option>
+                                    <option value="USD" {% if settings and settings.currency == 'USD' %}selected{% endif %}>Dólar ($)</option>
+                                    <option value="EUR" {% if settings and settings.currency == 'EUR' %}selected{% endif %}>Euro (€)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="timezone" class="form-label">Fuso Horário</label>
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="America/Sao_Paulo" {% if settings and settings.timezone == 'America/Sao_Paulo' %}selected{% endif %}>Brasília (GMT-3)</option>
+                                    <option value="America/Manaus" {% if settings and settings.timezone == 'America/Manaus' %}selected{% endif %}>Manaus (GMT-4)</option>
+                                    <option value="America/Belem" {% if settings and settings.timezone == 'America/Belem' %}selected{% endif %}>Belém (GMT-3)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="low_stock_threshold" class="form-label">Limite de Estoque Baixo</label>
+                                <input type="number" class="form-control" id="low_stock_threshold" name="low_stock_threshold" 
+                                       value="{{ settings.low_stock_threshold if settings else 10 }}" min="1">
+                                <div class="form-text">Quantidade mínima para alerta de estoque baixo</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="invoice_due_days" class="form-label">Dias para Vencimento de Faturas</label>
+                                <input type="number" class="form-control" id="invoice_due_days" name="invoice_due_days" 
+                                       value="{{ settings.invoice_due_days if settings else 30 }}" min="1">
+                                <div class="form-text">Dias padrão para vencimento de faturas</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings sidebar -->
+        <div class="col-lg-4">
+            <!-- Email settings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>
+                        Configurações de E-mail
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.email_settings') }}">
+                        <div class="mb-3">
+                            <label for="smtp_server" class="form-label">Servidor SMTP</label>
+                            <input type="text" class="form-control" id="smtp_server" name="smtp_server" 
+                                   value="{{ email_settings.smtp_server if email_settings else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="smtp_port" class="form-label">Porta SMTP</label>
+                            <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                                   value="{{ email_settings.smtp_port if email_settings else 587 }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="smtp_username" class="form-label">Usuário SMTP</label>
+                            <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
+                                   value="{{ email_settings.smtp_username if email_settings else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="smtp_password" class="form-label">Senha SMTP</label>
+                            <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                                   value="{{ email_settings.smtp_password if email_settings else '' }}">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="smtp_use_tls" name="smtp_use_tls" 
+                                   {% if email_settings and email_settings.smtp_use_tls %}checked{% endif %}>
+                            <label class="form-check-label" for="smtp_use_tls">
+                                Usar TLS
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-info btn-sm w-100">
+                            <i class="fas fa-save me-1"></i>
+                            Salvar Configurações de E-mail
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Backup settings -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Backup do Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.backup_settings') }}">
+                        <div class="mb-3">
+                            <label for="backup_frequency" class="form-label">Frequência de Backup</label>
+                            <select class="form-select" id="backup_frequency" name="backup_frequency">
+                                <option value="daily" {% if backup_settings and backup_settings.frequency == 'daily' %}selected{% endif %}>Diário</option>
+                                <option value="weekly" {% if backup_settings and backup_settings.frequency == 'weekly' %}selected{% endif %}>Semanal</option>
+                                <option value="monthly" {% if backup_settings and backup_settings.frequency == 'monthly' %}selected{% endif %}>Mensal</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="backup_retention" class="form-label">Retenção de Backups (dias)</label>
+                            <input type="number" class="form-control" id="backup_retention" name="backup_retention" 
+                                   value="{{ backup_settings.retention_days if backup_settings else 30 }}" min="1">
+                        </div>
+                        <button type="submit" class="btn btn-info btn-sm w-100 mb-2">
+                            <i class="fas fa-save me-1"></i>
+                            Salvar Configurações de Backup
+                        </button>
+                    </form>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.create_backup') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-download me-1"></i>
+                            Criar Backup Agora
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="restoreBackup()">
+                            <i class="fas fa-upload me-1"></i>
+                            Restaurar Backup
+                        </button>
+                    </div>
+                    
+                    {% if backup_settings and backup_settings.last_backup %}
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            Último backup: {{ backup_settings.last_backup.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function restoreBackup() {
+    if (confirm('ATENÇÃO: Restaurar backup irá sobrescrever todos os dados atuais. Deseja continuar?')) {
+        // Implementar lógica de restauração
+        alert('Funcionalidade de restauração será implementada em breve!');
+    }
+}
+
+// Validação de formulários
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação do formulário de configurações gerais
+    const generalForm = document.querySelector('form[action="{{ url_for("main.settings") }}"]');
+    if (generalForm) {
+        generalForm.addEventListener('submit', function(e) {
+            const lowStock = document.getElementById('low_stock_threshold').value;
+            const invoiceDays = document.getElementById('invoice_due_days').value;
+            
+            if (lowStock < 1) {
+                e.preventDefault();
+                alert('O limite de estoque baixo deve ser maior que 0!');
+                return;
+            }
+            
+            if (invoiceDays < 1) {
+                e.preventDefault();
+                alert('Os dias para vencimento devem ser maiores que 0!');
+                return;
+            }
+        });
+    }
+    
+    // Validação do formulário de e-mail
+    const emailForm = document.querySelector('form[action="{{ url_for("main.email_settings") }}"]');
+    if (emailForm) {
+        emailForm.addEventListener('submit', function(e) {
+            const port = document.getElementById('smtp_port').value;
+            
+            if (port < 1 || port > 65535) {
+                e.preventDefault();
+                alert('A porta SMTP deve estar entre 1 e 65535!');
+                return;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

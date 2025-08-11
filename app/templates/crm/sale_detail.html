@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Venda #{{ sale.id }} - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-receipt me-2"></i>
+                Venda #{{ sale.id }}
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.index') }}">CRM</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('crm.sales') }}">Vendas</a></li>
+                    <li class="breadcrumb-item active">#{{ sale.id }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('crm.edit_sale', sale_id=sale.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            <button type="button" class="btn btn-success" onclick="printSale()">
+                <i class="fas fa-print me-1"></i>Imprimir
+            </button>
+            <button type="button" class="btn btn-danger" onclick="deleteSale({{ sale.id }})">
+                <i class="fas fa-trash me-1"></i>Excluir
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações da Venda -->
+        <div class="col-lg-8">
+            <!-- Cabeçalho da Venda -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Informações da Venda
+                        </h5>
+                        <div>
+                            {% if sale.status == 'completed' %}
+                                <span class="badge bg-success fs-6">Concluída</span>
+                            {% elif sale.status == 'pending' %}
+                                <span class="badge bg-warning fs-6">Pendente</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">Cancelada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Número da Venda:</strong></td>
+                                    <td>#{{ sale.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Data:</strong></td>
+                                    <td>{{ sale.date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if sale.status == 'completed' %}
+                                            <span class="badge bg-success">Concluída</span>
+                                        {% elif sale.status == 'pending' %}
+                                            <span class="badge bg-warning">Pendente</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Forma de Pagamento:</strong></td>
+                                    <td>
+                                        {% if sale.payment_method %}
+                                            {% set payment_methods = {
+                                                'cash': 'Dinheiro',
+                                                'credit_card': 'Cartão de Crédito',
+                                                'debit_card': 'Cartão de Débito',
+                                                'pix': 'PIX',
+                                                'bank_transfer': 'Transferência Bancária',
+                                                'check': 'Cheque',
+                                                'other': 'Outro'
+                                            } %}
+                                            {{ payment_methods.get(sale.payment_method, sale.payment_method) }}
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Vendedor:</strong></td>
+                                    <td>
+                                        {% if sale.seller %}
+                                            {{ sale.seller.first_name }} {{ sale.seller.last_name }}
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Criado em:</strong></td>
+                                    <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Atualizado em:</strong></td>
+                                    <td>{{ sale.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if sale.notes %}
+                    <hr>
+                    <h6 class="text-muted">Observações</h6>
+                    <p class="mb-0">{{ sale.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações do Cliente -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>{{ sale.customer.name }}</h6>
+                            {% if sale.customer.company %}
+                                <p class="text-muted mb-1">{{ sale.customer.company }}</p>
+                            {% endif %}
+                            {% if sale.customer.position %}
+                                <p class="text-muted mb-1">{{ sale.customer.position }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if sale.customer.email %}
+                                <p class="mb-1">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    <a href="mailto:{{ sale.customer.email }}">{{ sale.customer.email }}</a>
+                                </p>
+                            {% endif %}
+                            {% if sale.customer.phone %}
+                                <p class="mb-1">
+                                    <i class="fas fa-phone me-2"></i>
+                                    <a href="tel:{{ sale.customer.phone }}">{{ sale.customer.phone }}</a>
+                                </p>
+                            {% endif %}
+                            {% if sale.customer.address %}
+                                <p class="mb-1">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    {{ sale.customer.address }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ url_for('crm.customer_detail', customer_id=sale.customer.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Ver Cliente
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Itens da Venda -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-basket me-2"></i>
+                        Itens da Venda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sale.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th class="text-center">Quantidade</th>
+                                        <th class="text-end">Preço Unit.</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in sale.items %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ item.product.name }}</strong>
+                                                {% if item.product.category %}
+                                                    <br><small class="text-muted">{{ item.product.category.name }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">R$ {{ "%.2f"|format(item.unit_price) }}</td>
+                                        <td class="text-end">R$ {{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                        <td class="text-end">R$ {{ "%.2f"|format(sale.total_amount) }}</td>
+                                    </tr>
+                                    {% if sale.discount and sale.discount > 0 %}
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Desconto:</strong></td>
+                                        <td class="text-end text-danger">-R$ {{ "%.2f"|format(sale.discount) }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr class="table-active">
+                                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                        <td class="text-end"><strong>R$ {{ "%.2f"|format(sale.total_amount - (sale.discount or 0)) }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-basket fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhum item encontrado nesta venda.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Resumo Financeiro -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>
+                        Resumo Financeiro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6">Subtotal:</div>
+                        <div class="col-6 text-end">R$ {{ "%.2f"|format(sale.total_amount) }}</div>
+                    </div>
+                    {% if sale.discount and sale.discount > 0 %}
+                    <div class="row mb-2">
+                        <div class="col-6">Desconto:</div>
+                        <div class="col-6 text-end text-danger">-R$ {{ "%.2f"|format(sale.discount) }}</div>
+                    </div>
+                    {% endif %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-6"><strong>Total:</strong></div>
+                        <div class="col-6 text-end"><strong>R$ {{ "%.2f"|format(sale.total_amount - (sale.discount or 0)) }}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if sale.status == 'pending' %}
+                        <button type="button" class="btn btn-success" onclick="completeSale({{ sale.id }})">
+                            <i class="fas fa-check me-1"></i>Marcar como Concluída
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('crm.new_sale') }}?customer_id={{ sale.customer.id }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i>Nova Venda para este Cliente
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-info" onclick="duplicateSale({{ sale.id }})">
+                            <i class="fas fa-copy me-1"></i>Duplicar Venda
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de Alterações -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Histórico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Venda Criada</h6>
+                                <p class="timeline-text">{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                            </div>
+                        </div>
+                        {% if sale.updated_at != sale.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Última Atualização</h6>
+                                <p class="timeline-text">{{ sale.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a venda #{{ sale.id }}?</p>
+                <p class="text-danger"><small>Esta ação não pode ser desfeita.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Conclusão -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Conclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja marcar a venda #{{ sale.id }} como concluída?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="completeForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="status" value="completed">
+                    <button type="submit" class="btn btn-success">Confirmar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteSale(saleId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    form.action = `/crm/sales/${saleId}/delete`;
+    modal.show();
+}
+
+function completeSale(saleId) {
+    const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+    const form = document.getElementById('completeForm');
+    form.action = `/crm/sales/${saleId}/edit`;
+    modal.show();
+}
+
+function printSale() {
+    window.print();
+}
+
+function duplicateSale(saleId) {
+    if (confirm('Deseja duplicar esta venda?')) {
+        window.location.href = `/crm/sales/${saleId}/duplicate`;
+    }
+}
+</script>
+{% endblock %}
+
+

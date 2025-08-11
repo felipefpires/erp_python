@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios de Estoque - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-chart-bar me-2"></i>Relatórios de Estoque
+        </h1>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="exportReport()">
+                <i class="fas fa-download me-2"></i>Exportar
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="printReport()">
+                <i class="fas fa-print me-2"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="report_type" class="form-label">Tipo de Relatório</label>
+                    <select class="form-select" id="report_type" name="report_type">
+                        <option value="overview" {{ 'selected' if request.args.get('report_type') == 'overview' }}>Visão Geral</option>
+                        <option value="low_stock" {{ 'selected' if request.args.get('report_type') == 'low_stock' }}>Estoque Baixo</option>
+                        <option value="movements" {{ 'selected' if request.args.get('report_type') == 'movements' }}>Movimentações</option>
+                        <option value="categories" {{ 'selected' if request.args.get('report_type') == 'categories' }}>Por Categoria</option>
+                        <option value="value" {{ 'selected' if request.args.get('report_type') == 'value' }}>Valor em Estoque</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="category_id" class="form-label">Categoria</label>
+                    <select class="form-select" id="category_id" name="category_id">
+                        <option value="">Todas</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {{ 'selected' if request.args.get('category_id')|int == category.id }}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Gerar Relatório
+                    </button>
+                    <a href="{{ url_for('inventory.reports') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo Estatístico -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ summary.total_products }}</h4>
+                            <small>Total de Produtos</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-box fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ summary.active_products }}</h4>
+                            <small>Produtos Ativos</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ summary.low_stock_products }}</h4>
+                            <small>Estoque Baixo</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">R$ {{ "%.2f"|format(summary.total_value) }}</h4>
+                            <small>Valor Total</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Produtos por Categoria
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Status do Estoque
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="stockStatusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Dados -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>Dados do Relatório
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if report_data %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Estoque Atual</th>
+                            <th>Estoque Mínimo</th>
+                            <th>Status</th>
+                            <th>Valor Unitário</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in report_data %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-3">
+                                        <div class="avatar-title bg-light rounded-circle">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ item.name }}</h6>
+                                        <small class="text-muted">{{ item.sku or 'N/A' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.category %}
+                                    <span class="badge bg-primary">{{ item.category.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Sem categoria</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ item.current_stock }} {{ item.unit|upper }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ item.min_stock }} {{ item.unit|upper }}</span>
+                            </td>
+                            <td>
+                                {% if item.current_stock <= item.min_stock %}
+                                    <span class="badge bg-danger">Baixo</span>
+                                {% elif item.current_stock == 0 %}
+                                    <span class="badge bg-secondary">Sem Estoque</span>
+                                {% else %}
+                                    <span class="badge bg-success">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-success">R$ {{ "%.2f"|format(item.sale_price) }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold">R$ {{ "%.2f"|format(item.total_value) }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhum dado encontrado</h5>
+                <p class="text-muted">Selecione os filtros e gere um relatório.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Dados para os gráficos
+const categoryData = {{ category_data|tojson }};
+const stockStatusData = {{ stock_status_data|tojson }};
+
+// Gráfico de Produtos por Categoria
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+const categoryChart = new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.labels,
+        datasets: [{
+            data: categoryData.values,
+            backgroundColor: [
+                '#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d',
+                '#17a2b8', '#fd7e14', '#6f42c1', '#e83e8c', '#20c997'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Status do Estoque
+const stockStatusCtx = document.getElementById('stockStatusChart').getContext('2d');
+const stockStatusChart = new Chart(stockStatusCtx, {
+    type: 'bar',
+    data: {
+        labels: stockStatusData.labels,
+        datasets: [{
+            label: 'Quantidade de Produtos',
+            data: stockStatusData.values,
+            backgroundColor: [
+                '#28a745', // Normal
+                '#ffc107', // Baixo
+                '#dc3545', // Crítico
+                '#6c757d'  // Sem estoque
+            ],
+            borderWidth: 1,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Função para exportar relatório
+function exportReport() {
+    const table = document.getElementById('reportTable');
+    if (!table) {
+        alert('Nenhum dado para exportar.');
+        return;
+    }
+
+    // Criar CSV
+    let csv = 'Produto,Categoria,Estoque Atual,Estoque Mínimo,Status,Valor Unitário,Valor Total\n';
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData = [];
+        
+        cells.forEach((cell, index) => {
+            let text = cell.textContent.trim();
+            // Remover badges e ícones
+            text = text.replace(/[^\w\s\-.,]/g, '');
+            rowData.push(`"${text}"`);
+        });
+        
+        csv += rowData.join(',') + '\n';
+    });
+
+    // Download do arquivo
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'relatorio_estoque.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Função para imprimir relatório
+function printReport() {
+    window.print();
+}
+
+// Auto-submit do formulário quando mudar tipo de relatório
+document.getElementById('report_type').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// Auto-submit do formulário quando mudar categoria
+document.getElementById('category_id').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+
+<style>
+@media print {
+    .btn-group, .card-header .btn {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        background: none !important;
+        border-bottom: 1px solid #000 !important;
+    }
+}
+</style>
+{% endblock %}
+

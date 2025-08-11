@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Fatura - Finanças{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-plus me-2"></i>Nova Fatura
+        </h1>
+        <a href="{{ url_for('finance.invoices') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-invoice me-2"></i>Informações da Fatura
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="invoiceForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="invoice_number" class="form-label">Número da Fatura *</label>
+                                <input type="text" class="form-control" id="invoice_number" name="invoice_number" 
+                                       required placeholder="Ex: FAT-2024-001">
+                                <div class="form-text">Número único para identificar a fatura</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sale_id" class="form-label">Venda Relacionada *</label>
+                                <select class="form-select" id="sale_id" name="sale_id" required>
+                                    <option value="">Selecione uma venda</option>
+                                    {% for sale in sales %}
+                                    <option value="{{ sale.id }}" data-customer="{{ sale.customer.name }}" data-amount="{{ sale.total_amount }}">
+                                        Venda #{{ sale.id }} - {{ sale.customer.name }} (R$ {{ "%.2f"|format(sale.total_amount) }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Venda que gerou esta fatura</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="issue_date" class="form-label">Data de Emissão *</label>
+                                <input type="date" class="form-control" id="issue_date" name="issue_date" 
+                                       value="{{ today }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="due_date" class="form-label">Data de Vencimento *</label>
+                                <input type="date" class="form-control" id="due_date" name="due_date" 
+                                       value="{{ (today + timedelta(days=30)).strftime('%Y-%m-%d') }}" required>
+                                <div class="form-text">Data limite para pagamento</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="total_amount" class="form-label">Valor Total *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" class="form-control" id="total_amount" name="total_amount" 
+                                           step="0.01" min="0.01" required placeholder="0,00">
+                                </div>
+                                <div class="form-text">Valor total da fatura</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_terms" class="form-label">Condições de Pagamento</label>
+                                <select class="form-select" id="payment_terms" name="payment_terms">
+                                    <option value="30">30 dias</option>
+                                    <option value="15">15 dias</option>
+                                    <option value="7">7 dias</option>
+                                    <option value="0">À vista</option>
+                                </select>
+                                <div class="form-text">Prazo padrão para pagamento</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="notes" name="notes" 
+                                      rows="3" placeholder="Observações adicionais sobre a fatura..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('finance.invoices') }}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Criar Fatura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Resumo da Fatura -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Resumo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="invoiceSummary">
+                        <p class="text-muted">Preencha os campos para ver o resumo</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações da Venda -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Informações da Venda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="saleInfo">
+                        <p class="text-muted">Selecione uma venda para ver os detalhes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dicas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Boas Práticas</h6>
+                        <ul class="mb-0">
+                            <li>Use números sequenciais para faturas</li>
+                            <li>Defina prazos de vencimento realistas</li>
+                            <li>Mantenha observações claras</li>
+                            <li>Relacione sempre com uma venda</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('finance.invoices') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Todas as Faturas
+                        </a>
+                        <a href="{{ url_for('crm.sales') }}" class="btn btn-outline-success">
+                            <i class="fas fa-shopping-cart me-2"></i>Ver Vendas
+                        </a>
+                        <a href="{{ url_for('finance.reports') }}" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i>Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Máscara para valores monetários
+document.getElementById('total_amount').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = (parseFloat(value) / 100).toFixed(2);
+    e.target.value = value;
+});
+
+// Atualizar data de vencimento baseado nas condições de pagamento
+document.getElementById('payment_terms').addEventListener('change', function() {
+    const issueDate = new Date(document.getElementById('issue_date').value);
+    const paymentTerms = parseInt(this.value);
+    
+    if (issueDate && !isNaN(paymentTerms)) {
+        const dueDate = new Date(issueDate);
+        dueDate.setDate(dueDate.getDate() + paymentTerms);
+        
+        document.getElementById('due_date').value = dueDate.toISOString().split('T')[0];
+    }
+});
+
+// Atualizar resumo da fatura
+function updateInvoiceSummary() {
+    const invoiceNumber = document.getElementById('invoice_number').value;
+    const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
+    const issueDate = document.getElementById('issue_date').value;
+    const dueDate = document.getElementById('due_date').value;
+    const summary = document.getElementById('invoiceSummary');
+    
+    if (invoiceNumber && totalAmount > 0) {
+        summary.innerHTML = `
+            <div class="mb-3">
+                <small class="text-muted">Número:</small>
+                <div class="fw-bold">${invoiceNumber}</div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">Valor Total:</small>
+                <div class="fw-bold text-primary">R$ ${totalAmount.toFixed(2)}</div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">Emissão:</small>
+                <div>${issueDate || 'N/A'}</div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">Vencimento:</small>
+                <div>${dueDate || 'N/A'}</div>
+            </div>
+        `;
+    } else {
+        summary.innerHTML = '<p class="text-muted">Preencha os campos para ver o resumo</p>';
+    }
+}
+
+// Atualizar informações da venda
+function updateSaleInfo() {
+    const saleSelect = document.getElementById('sale_id');
+    const saleInfo = document.getElementById('saleInfo');
+    
+    if (saleSelect.value) {
+        const selectedOption = saleSelect.options[saleSelect.selectedIndex];
+        const customer = selectedOption.dataset.customer;
+        const amount = selectedOption.dataset.amount;
+        
+        saleInfo.innerHTML = `
+            <div class="mb-3">
+                <small class="text-muted">Cliente:</small>
+                <div class="fw-bold">${customer}</div>
+            </div>
+            <div class="mb-3">
+                <small class="text-muted">Valor da Venda:</small>
+                <div class="text-success">R$ ${amount}</div>
+            </div>
+        `;
+        
+        // Preencher automaticamente o valor total
+        document.getElementById('total_amount').value = amount;
+        updateInvoiceSummary();
+    } else {
+        saleInfo.innerHTML = '<p class="text-muted">Selecione uma venda para ver os detalhes</p>';
+    }
+}
+
+// Event listeners
+document.getElementById('invoice_number').addEventListener('input', updateInvoiceSummary);
+document.getElementById('total_amount').addEventListener('input', updateInvoiceSummary);
+document.getElementById('issue_date').addEventListener('change', updateInvoiceSummary);
+document.getElementById('due_date').addEventListener('change', updateInvoiceSummary);
+document.getElementById('sale_id').addEventListener('change', updateSaleInfo);
+
+// Validação do formulário
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    const invoiceNumber = document.getElementById('invoice_number').value.trim();
+    const saleId = document.getElementById('sale_id').value;
+    const totalAmount = parseFloat(document.getElementById('total_amount').value);
+    const issueDate = document.getElementById('issue_date').value;
+    const dueDate = document.getElementById('due_date').value;
+    
+    if (!invoiceNumber) {
+        e.preventDefault();
+        alert('Por favor, informe o número da fatura.');
+        document.getElementById('invoice_number').focus();
+        return;
+    }
+    
+    if (!saleId) {
+        e.preventDefault();
+        alert('Por favor, selecione uma venda.');
+        document.getElementById('sale_id').focus();
+        return;
+    }
+    
+    if (!totalAmount || totalAmount <= 0) {
+        e.preventDefault();
+        alert('Por favor, informe um valor total válido.');
+        document.getElementById('total_amount').focus();
+        return;
+    }
+    
+    if (!issueDate) {
+        e.preventDefault();
+        alert('Por favor, informe a data de emissão.');
+        document.getElementById('issue_date').focus();
+        return;
+    }
+    
+    if (!dueDate) {
+        e.preventDefault();
+        alert('Por favor, informe a data de vencimento.');
+        document.getElementById('due_date').focus();
+        return;
+    }
+    
+    if (new Date(dueDate) <= new Date(issueDate)) {
+        e.preventDefault();
+        alert('A data de vencimento deve ser posterior à data de emissão.');
+        document.getElementById('due_date').focus();
+        return;
+    }
+});
+</script>
+{% endblock %}
+

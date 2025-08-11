@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ product.name }} - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-edit me-2"></i>Editar Produto
+        </h1>
+        <a href="{{ url_for('inventory.product_detail', id=product.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-box me-2"></i>{{ product.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <!-- Informações Básicas -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Informações Básicas</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nome do Produto *</label>
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ product.name }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Descrição</label>
+                                    <textarea class="form-control" id="description" name="description" 
+                                              rows="3">{{ product.description or '' }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Categoria</label>
+                                    <select class="form-select" id="category_id" name="category_id">
+                                        <option value="">Selecione uma categoria</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {{ 'selected' if product.category_id == category.id }}>
+                                            {{ category.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="unit" class="form-label">Unidade</label>
+                                    <select class="form-select" id="unit" name="unit">
+                                        <option value="un" {{ 'selected' if product.unit == 'un' }}>Unidade</option>
+                                        <option value="kg" {{ 'selected' if product.unit == 'kg' }}>Quilograma</option>
+                                        <option value="l" {{ 'selected' if product.unit == 'l' }}>Litro</option>
+                                        <option value="m" {{ 'selected' if product.unit == 'm' }}>Metro</option>
+                                        <option value="pct" {{ 'selected' if product.unit == 'pct' }}>Pacote</option>
+                                        <option value="cx" {{ 'selected' if product.unit == 'cx' }}>Caixa</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Códigos e Identificação -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Códigos e Identificação</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="sku" class="form-label">SKU</label>
+                                    <input type="text" class="form-control" id="sku" name="sku" 
+                                           value="{{ product.sku or '' }}" placeholder="Código interno do produto">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="barcode" class="form-label">Código de Barras</label>
+                                    <input type="text" class="form-control" id="barcode" name="barcode" 
+                                           value="{{ product.barcode or '' }}" placeholder="Código de barras (EAN, UPC, etc.)">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="image" class="form-label">Imagem do Produto</label>
+                                    <input type="file" class="form-control" id="image" name="image" 
+                                           accept="image/*">
+                                    <div class="form-text">Formatos aceitos: JPG, PNG, GIF (máx. 2MB)</div>
+                                    {% if product.image_url %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">Imagem atual: {{ product.image_url }}</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                               {{ 'checked' if product.is_active }}>
+                                        <label class="form-check-label" for="is_active">
+                                            Produto Ativo
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Produtos inativos não aparecem nas vendas</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Preços -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">Preços</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cost_price" class="form-label">Preço de Custo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="cost_price" name="cost_price" 
+                                               step="0.01" min="0" value="{{ "%.2f"|format(product.cost_price) }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sale_price" class="form-label">Preço de Venda</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="sale_price" name="sale_price" 
+                                               step="0.01" min="0" value="{{ "%.2f"|format(product.sale_price) }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Controle de Estoque -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">Controle de Estoque</h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Estoque Atual:</strong> {{ product.current_stock }} {{ product.unit|upper }}
+                                    <br>
+                                    <small>Para alterar o estoque, use a funcionalidade de movimentação.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="min_stock" class="form-label">Estoque Mínimo</label>
+                                    <input type="number" class="form-control" id="min_stock" name="min_stock" 
+                                           min="0" value="{{ product.min_stock }}">
+                                    <div class="form-text">Alerta quando estoque ficar abaixo deste valor</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="max_stock" class="form-label">Estoque Máximo</label>
+                                    <input type="number" class="form-control" id="max_stock" name="max_stock" 
+                                           min="0" value="{{ product.max_stock or '' }}">
+                                    <div class="form-text">Capacidade máxima de armazenamento</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Ações -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('inventory.product_detail', id=product.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Informações Atuais -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações Atuais
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td class="text-muted">Estoque Atual:</td>
+                            <td class="fw-bold">{{ product.current_stock }} {{ product.unit|upper }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status:</td>
+                            <td>
+                                {% if product.is_active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Margem:</td>
+                            <td>
+                                {% if product.cost_price > 0 %}
+                                    {% set margin = ((product.sale_price - product.cost_price) / product.cost_price * 100) %}
+                                    <span class="badge bg-{{ 'success' if margin > 0 else 'danger' }}">
+                                        {{ "%.1f"|format(margin) }}%
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Criado em:</td>
+                            <td>{{ product.created_at.strftime('%d/%m/%Y') if product.created_at else 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ações Rápidas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('inventory.product_detail', id=product.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye me-2"></i>Ver Detalhes
+                        </a>
+                        <a href="{{ url_for('inventory.new_movement') }}?product_id={{ product.id }}" class="btn btn-outline-success">
+                            <i class="fas fa-exchange-alt me-2"></i>Movimentar Estoque
+                        </a>
+                        <a href="{{ url_for('crm.new_sale') }}?product_id={{ product.id }}" class="btn btn-outline-info">
+                            <i class="fas fa-shopping-cart me-2"></i>Vender Produto
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            {% if product.current_stock <= product.min_stock %}
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Alerta de Estoque</h6>
+                <p class="mb-0">O estoque atual está abaixo do mínimo recomendado.</p>
+            </div>
+            {% endif %}
+
+            {% if product.max_stock and product.current_stock >= product.max_stock %}
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>Estoque Máximo</h6>
+                <p class="mb-0">O estoque atual atingiu a capacidade máxima.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Máscara para preços
+document.getElementById('cost_price').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = (parseFloat(value) / 100).toFixed(2);
+    e.target.value = value;
+});
+
+document.getElementById('sale_price').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = (parseFloat(value) / 100).toFixed(2);
+    e.target.value = value;
+});
+
+// Validação do formulário
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const salePrice = parseFloat(document.getElementById('sale_price').value);
+    
+    if (!name) {
+        e.preventDefault();
+        alert('Por favor, preencha o nome do produto.');
+        document.getElementById('name').focus();
+        return;
+    }
+    
+    if (salePrice <= 0) {
+        e.preventDefault();
+        alert('Por favor, informe um preço de venda válido.');
+        document.getElementById('sale_price').focus();
+        return;
+    }
+});
+
+// Preview da imagem
+document.getElementById('image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB
+            alert('A imagem deve ter no máximo 2MB.');
+            e.target.value = '';
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}
+

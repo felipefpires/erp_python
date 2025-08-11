@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - Detalhes do Evento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{{ event.title }}</h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('schedule.edit_event', id=event.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i>
+                Editar
+            </a>
+            <button type="button" class="btn btn-danger" onclick="deleteEvent({{ event.id }})">
+                <i class="fas fa-trash me-1"></i>
+                Excluir
+            </button>
+            <a href="{{ url_for('schedule.events') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Event details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Informações do Evento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Título</label>
+                                <p class="mb-0">{{ event.title }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <p class="mb-0">
+                                    {% if event.event_type == 'meeting' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-users me-1"></i>
+                                            Reunião
+                                        </span>
+                                    {% elif event.event_type == 'call' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-phone me-1"></i>
+                                            Chamada
+                                        </span>
+                                    {% elif event.event_type == 'task' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-tasks me-1"></i>
+                                            Tarefa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-bell me-1"></i>
+                                            Lembrete
+                                        </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if event.description %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descrição</label>
+                        <p class="mb-0">{{ event.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Data e Hora de Início</label>
+                                <p class="mb-0">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ event.start_date.strftime('%d/%m/%Y') }}
+                                    <br>
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ event.start_date.strftime('%H:%M') }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Data e Hora de Fim</label>
+                                <p class="mb-0">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ event.end_date.strftime('%d/%m/%Y') }}
+                                    <br>
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ event.end_date.strftime('%H:%M') }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Local</label>
+                                <p class="mb-0">
+                                    {% if event.location %}
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        {{ event.location }}
+                                    {% else %}
+                                        <span class="text-muted">Não definido</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Prioridade</label>
+                                <p class="mb-0">
+                                    {% if event.priority == 'urgent' %}
+                                        <span class="badge bg-danger">Urgente</span>
+                                    {% elif event.priority == 'high' %}
+                                        <span class="badge bg-warning">Alta</span>
+                                    {% elif event.priority == 'low' %}
+                                        <span class="badge bg-secondary">Baixa</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Status</label>
+                                <p class="mb-0">
+                                    {% if event.status == 'scheduled' %}
+                                        <span class="badge bg-primary">Agendado</span>
+                                    {% elif event.status == 'completed' %}
+                                        <span class="badge bg-success">Concluído</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Cancelado</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Duração</label>
+                                <p class="mb-0">
+                                    {% set duration = (event.end_date - event.start_date).total_seconds() / 3600 %}
+                                    {% if duration >= 24 %}
+                                        {{ (duration / 24)|round(1) }} dias
+                                    {% elif duration >= 1 %}
+                                        {{ duration|round(1) }} horas
+                                    {% else %}
+                                        {{ (duration * 60)|round(0)|int }} minutos
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if event.is_all_day %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Evento</label>
+                        <p class="mb-0">
+                            <i class="fas fa-sun me-1"></i>
+                            Evento de dia inteiro
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if event.reminder_minutes > 0 %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Lembrete</label>
+                        <p class="mb-0">
+                            <i class="fas fa-bell me-1"></i>
+                            {{ event.reminder_minutes }} minutos antes
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Event timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Linha do Tempo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Evento Criado</h6>
+                                <p class="text-muted mb-0">{{ event.created_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if event.start_date > event.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Evento Agendado</h6>
+                                <p class="text-muted mb-0">Para {{ event.start_date.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if event.status == 'completed' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Evento Concluído</h6>
+                                <p class="text-muted mb-0">Concluído em {{ event.end_date.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if event.status == 'scheduled' %}
+                        <button type="button" class="btn btn-success" onclick="markAsCompleted({{ event.id }})">
+                            <i class="fas fa-check me-1"></i>
+                            Marcar como Concluído
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="markAsCancelled({{ event.id }})">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar Evento
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('schedule.edit_event', id=event.id) }}" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar Evento
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-primary" onclick="addToCalendar()">
+                            <i class="fas fa-calendar-plus me-1"></i>
+                            Adicionar ao Calendário
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Status do Evento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set now = moment().datetime %}
+                    {% if event.status == 'scheduled' %}
+                        {% if event.start_date > now %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-clock me-1"></i>
+                                <strong>Agendado</strong><br>
+                                Evento programado para o futuro
+                            </div>
+                        {% elif event.start_date <= now and event.end_date >= now %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-play me-1"></i>
+                                <strong>Em Andamento</strong><br>
+                                Evento acontecendo agora
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>Atrasado</strong><br>
+                                Evento deveria ter começado
+                            </div>
+                        {% endif %}
+                    {% elif event.status == 'completed' %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>Concluído</strong><br>
+                            Evento finalizado com sucesso
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-ban me-1"></i>
+                            <strong>Cancelado</strong><br>
+                            Evento foi cancelado
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Event metadata -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog me-2"></i>
+                        Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <div class="mb-2">
+                            <strong>ID:</strong> {{ event.id }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Criado em:</strong><br>
+                            {{ event.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Responsável:</strong><br>
+                            {{ event.user.name if event.user else 'Sistema' }}
+                        </div>
+                        {% if event.reminder_sent %}
+                        <div class="mb-2">
+                            <strong>Lembrete:</strong><br>
+                            <span class="text-success">Enviado</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+</style>
+
+<script>
+function deleteEvent(eventId) {
+    if (confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
+        fetch(`/schedule/events/${eventId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/schedule/events';
+            } else {
+                alert('Erro ao excluir evento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao excluir evento');
+        });
+    }
+}
+
+function markAsCompleted(eventId) {
+    if (confirm('Marcar este evento como concluído?')) {
+        fetch(`/schedule/events/${eventId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao marcar como concluído: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao marcar como concluído');
+        });
+    }
+}
+
+function markAsCancelled(eventId) {
+    if (confirm('Cancelar este evento?')) {
+        fetch(`/schedule/events/${eventId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao cancelar evento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao cancelar evento');
+        });
+    }
+}
+
+function addToCalendar() {
+    const event = {
+        title: '{{ event.title }}',
+        start: '{{ event.start_date.isoformat() }}',
+        end: '{{ event.end_date.isoformat() }}',
+        description: '{{ event.description or "" }}',
+        location: '{{ event.location or "" }}'
+    };
+    
+    // Create calendar event URL
+    const calendarUrl = `data:text/calendar;charset=utf8,BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART:${event.start.replace(/[-:]/g, '').replace(/\.\d{3}/, '')}Z
+DTEND:${event.end.replace(/[-:]/g, '').replace(/\.\d{3}/, '')}Z
+SUMMARY:${event.title}
+DESCRIPTION:${event.description}
+LOCATION:${event.location}
+END:VEVENT
+END:VCALENDAR`;
+    
+    // Download the file
+    const link = document.createElement('a');
+    link.href = calendarUrl;
+    link.download = 'evento.ics';
+    link.click();
+}
+</script>
+{% endblock %}
+

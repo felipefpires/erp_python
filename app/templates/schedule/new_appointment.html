@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Agendamento - Agendamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Novo Agendamento</h1>
+        <a href="{{ url_for('schedule.appointments') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Appointment form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>
+                        Informações do Agendamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="appointmentForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Título do Agendamento *</label>
+                                    <input type="text" class="form-control" id="title" name="title" 
+                                           required maxlength="200" placeholder="Digite o título do agendamento">
+                                    <div class="form-text">Nome ou título que identifica o agendamento</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="appointment_type" class="form-label">Tipo</label>
+                                    <select class="form-select" id="appointment_type" name="appointment_type">
+                                        <option value="consulta">Consulta</option>
+                                        <option value="reuniao">Reunião</option>
+                                        <option value="visita">Visita</option>
+                                        <option value="apresentacao">Apresentação</option>
+                                        <option value="outro">Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customer_id" class="form-label">Cliente *</label>
+                                    <select class="form-select" id="customer_id" name="customer_id" required>
+                                        <option value="">Selecione um cliente</option>
+                                        {% for customer in customers %}
+                                        <option value="{{ customer.id }}">{{ customer.name }} - {{ customer.email }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Cliente para o qual o agendamento será feito</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="duration_minutes" class="form-label">Duração (minutos)</label>
+                                    <select class="form-select" id="duration_minutes" name="duration_minutes">
+                                        <option value="15">15 minutos</option>
+                                        <option value="30">30 minutos</option>
+                                        <option value="60" selected>1 hora</option>
+                                        <option value="90">1 hora e 30 minutos</option>
+                                        <option value="120">2 horas</option>
+                                        <option value="180">3 horas</option>
+                                        <option value="240">4 horas</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="3" placeholder="Descreva os detalhes do agendamento"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="appointment_date" class="form-label">Data e Hora *</label>
+                                    <input type="datetime-local" class="form-control" id="appointment_date" name="appointment_date" 
+                                           required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="location" class="form-label">Local</label>
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           placeholder="Local do agendamento">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="notes" name="notes" 
+                                      rows="2" placeholder="Observações adicionais"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Criar Agendamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Appointment preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-eye me-2"></i>
+                        Prévia do Agendamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="appointmentPreview">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-calendar fa-3x mb-3"></i>
+                            <p>Preencha o formulário para ver a prévia do agendamento</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer info -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        Informações do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="customerInfo">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-user-plus fa-2x mb-2"></i>
+                            <p class="mb-0">Selecione um cliente para ver suas informações</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick tips -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Dicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Escolha horários adequados
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Defina duração realista
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Inclua local quando relevante
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Adicione observações importantes
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default datetime values
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const appointmentDate = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+    
+    document.getElementById('appointment_date').value = appointmentDate.toISOString().slice(0, 16);
+    
+    updatePreview();
+    updateCustomerInfo();
+});
+
+// Update preview when form changes
+document.getElementById('appointmentForm').addEventListener('input', function() {
+    updatePreview();
+    updateCustomerInfo();
+});
+
+function updatePreview() {
+    const title = document.getElementById('title').value || 'Título do Agendamento';
+    const description = document.getElementById('description').value || 'Sem descrição';
+    const appointmentType = document.getElementById('appointment_type').value;
+    const appointmentDate = document.getElementById('appointment_date').value;
+    const duration = document.getElementById('duration_minutes').value;
+    const location = document.getElementById('location').value || 'Local não definido';
+    const notes = document.getElementById('notes').value || '';
+    
+    const typeLabels = {
+        'consulta': 'Consulta',
+        'reuniao': 'Reunião',
+        'visita': 'Visita',
+        'apresentacao': 'Apresentação',
+        'outro': 'Outro'
+    };
+    
+    const durationLabels = {
+        '15': '15 min',
+        '30': '30 min',
+        '60': '1 hora',
+        '90': '1h 30min',
+        '120': '2 horas',
+        '180': '3 horas',
+        '240': '4 horas'
+    };
+    
+    let previewHtml = `
+        <div class="border rounded p-3">
+            <h6 class="fw-bold mb-2">${title}</h6>
+            <p class="text-muted small mb-2">${description}</p>
+            
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary">${typeLabels[appointmentType]}</span>
+                <span class="badge bg-info">${durationLabels[duration]}</span>
+            </div>
+            
+            <div class="small text-muted">
+                <div><i class="fas fa-calendar me-1"></i> ${appointmentDate ? new Date(appointmentDate).toLocaleString('pt-BR') : 'Data não definida'}</div>
+                <div><i class="fas fa-map-marker-alt me-1"></i> ${location}</div>
+                ${notes ? `<div><i class="fas fa-sticky-note me-1"></i> ${notes}</div>` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('appointmentPreview').innerHTML = previewHtml;
+}
+
+function updateCustomerInfo() {
+    const customerSelect = document.getElementById('customer_id');
+    const selectedCustomerId = customerSelect.value;
+    
+    if (!selectedCustomerId) {
+        document.getElementById('customerInfo').innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                <p class="mb-0">Selecione um cliente para ver suas informações</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const selectedOption = customerSelect.options[customerSelect.selectedIndex];
+    const customerName = selectedOption.text.split(' - ')[0];
+    const customerEmail = selectedOption.text.split(' - ')[1];
+    
+    document.getElementById('customerInfo').innerHTML = `
+        <div class="text-center">
+            <div class="avatar bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                <i class="fas fa-user"></i>
+            </div>
+            <h6 class="mb-1">${customerName}</h6>
+            <p class="text-muted small mb-2">${customerEmail}</p>
+            <div class="d-grid">
+                <a href="/crm/customers/${selectedCustomerId}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>
+                    Ver Cliente
+                </a>
+            </div>
+        </div>
+    `;
+}
+
+// Form validation
+document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+    if (!document.getElementById('title').value.trim()) {
+        e.preventDefault();
+        alert('O título do agendamento é obrigatório.');
+        return false;
+    }
+    
+    if (!document.getElementById('customer_id').value) {
+        e.preventDefault();
+        alert('É necessário selecionar um cliente.');
+        return false;
+    }
+    
+    if (!document.getElementById('appointment_date').value) {
+        e.preventDefault();
+        alert('A data e hora do agendamento são obrigatórias.');
+        return false;
+    }
+    
+    const appointmentDate = new Date(document.getElementById('appointment_date').value);
+    const now = new Date();
+    
+    if (appointmentDate <= now) {
+        e.preventDefault();
+        alert('A data e hora do agendamento devem ser futuras.');
+        return false;
+    }
+});
+
+// Duration change handler
+document.getElementById('duration_minutes').addEventListener('change', updatePreview);
+</script>
+{% endblock %}
+

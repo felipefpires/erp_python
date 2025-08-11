@@ -1,0 +1,148 @@
+name: Deploy to Proxmox
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Create deployment package
+      run: |
+        # Create deployment directory
+        mkdir -p deployment
+        
+        # Copy application files
+        cp -r app deployment/
+        cp -r scripts deployment/
+        cp -r docs deployment/
+        cp -r tools deployment/
+        
+        # Copy configuration files
+        cp requirements.txt deployment/
+        cp config.py deployment/
+        cp wsgi.py deployment/
+        cp app.py deployment/
+        cp init_db.py deployment/
+        
+        # Copy documentation
+        cp README.md deployment/
+        cp .gitignore deployment/
+        
+        # Create deployment archive
+        tar -czf erp-system-proxmox.tar.gz deployment/
+        
+    - name: Deploy to Proxmox VM
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROXMOX_HOST }}
+        username: ${{ secrets.PROXMOX_USER }}
+        key: ${{ secrets.PROXMOX_SSH_KEY }}
+        port: ${{ secrets.PROXMOX_PORT }}
+        script: |
+          # Create backup directory
+          mkdir -p /opt/erp-backups
+          
+          # Backup current installation if exists
+          if [ -d "/opt/erp-system" ]; then
+            echo "Creating backup of current installation..."
+            tar -czf /opt/erp-backups/erp-backup-$(date +%Y%m%d_%H%M%S).tar.gz /opt/erp-system/
+          fi
+          
+          # Stop current services
+          if systemctl is-active --quiet supervisor; then
+            echo "Stopping current services..."
+            supervisorctl stop erp-system || true
+          fi
+          
+          # Clean up old installation
+          rm -rf /opt/erp-system-old
+          if [ -d "/opt/erp-system" ]; then
+            mv /opt/erp-system /opt/erp-system-old
+          fi
+          
+          # Create new installation directory
+          mkdir -p /opt/erp-system
+          
+          # Extract new deployment
+          tar -xzf erp-system-proxmox.tar.gz -C /tmp/
+          cp -r /tmp/deployment/* /opt/erp-system/
+          
+          # Set permissions
+          chown -R erp:erp /opt/erp-system/
+          chmod -R 755 /opt/erp-system/
+          
+          # Update Python environment
+          if [ -d "/opt/erp-system/venv" ]; then
+            echo "Updating Python dependencies..."
+            /opt/erp-system/venv/bin/pip install -r /opt/erp-system/requirements.txt
+          else
+            echo "Creating new Python environment..."
+            python3 -m venv /opt/erp-system/venv
+            /opt/erp-system/venv/bin/pip install -r /opt/erp-system/requirements.txt
+          fi
+          
+          # Restart services
+          echo "Restarting services..."
+          systemctl restart supervisor
+          supervisorctl reread
+          supervisorctl update
+          supervisorctl start erp-system
+          
+          # Clean up
+          rm -rf /tmp/deployment
+          rm -f erp-system-proxmox.tar.gz
+          
+          echo "Deployment completed successfully!"
+          
+    - name: Verify deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.PROXMOX_HOST }}
+        username: ${{ secrets.PROXMOX_USER }}
+        key: ${{ secrets.PROXMOX_SSH_KEY }}
+        port: ${{ secrets.PROXMOX_PORT }}
+        script: |
+          # Check if services are running
+          echo "Checking service status..."
+          supervisorctl status erp-system
+          
+          # Check if application is responding
+          echo "Testing application..."
+          curl -f http://localhost || exit 1
+          
+          echo "Deployment verification completed!"
+          
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment to Proxmox completed successfully!"
+        else
+          echo "❌ Deployment to Proxmox failed!"
+        fi

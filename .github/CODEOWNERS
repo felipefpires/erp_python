@@ -1,0 +1,38 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# they will be requested for review when someone opens a pull request.
+
+* @your-username
+
+# Core application files
+/app/ @your-username
+/app.py @your-username
+/wsgi.py @your-username
+/config.py @your-username
+
+# Database and migrations
+/init_db.py @your-username
+/scripts/migrations/ @your-username
+
+# Deployment and infrastructure
+/scripts/deploy/ @your-username
+/scripts/proxmox/ @your-username
+/.github/workflows/ @your-username
+
+# Documentation
+/docs/ @your-username
+/README.md @your-username
+
+# Testing
+/scripts/tests/ @your-username
+
+# Tools and maintenance
+/tools/ @your-username
+
+# Configuration files
+/requirements.txt @your-username
+/pyproject.toml @your-username
+/.gitignore @your-username
+
+# Security and compliance
+/.github/security/ @your-username

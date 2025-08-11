@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Cliente - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Novo Cliente</h1>
+        <a href="{{ url_for('crm.customers') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Informações do Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('crm.new_customer') }}">
+                        <!-- Basic Information -->
+                        <h6 class="mb-3 text-primary">Informações Básicas</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nome Completo *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ form.name.data if form.name.data else '' }}" required>
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ form.email.data if form.email.data else '' }}">
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Telefone</label>
+                                <input type="text" class="form-control" id="phone" name="phone" 
+                                       value="{{ form.phone.data if form.phone.data else '' }}" 
+                                       placeholder="(11) 99999-9999">
+                                {% if form.phone.errors %}
+                                    <div class="text-danger small">{{ form.phone.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="instagram" class="form-label">Instagram</label>
+                                <input type="text" class="form-control" id="instagram" name="instagram" 
+                                       value="{{ form.instagram.data if form.instagram.data else '' }}" 
+                                       placeholder="@usuario">
+                                {% if form.instagram.errors %}
+                                    <div class="text-danger small">{{ form.instagram.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="active" {% if form.status.data == 'active' %}selected{% endif %}>Ativo</option>
+                                    <option value="inactive" {% if form.status.data == 'inactive' %}selected{% endif %}>Inativo</option>
+                                    <option value="prospect" {% if form.status.data == 'prospect' %}selected{% endif %}>Prospecto</option>
+                                </select>
+                                {% if form.status.errors %}
+                                    <div class="text-danger small">{{ form.status.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Company Information -->
+                        <h6 class="mb-3 text-primary mt-4">Informações da Empresa</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="company" class="form-label">Empresa</label>
+                                <input type="text" class="form-control" id="company" name="company" 
+                                       value="{{ form.company.data if form.company.data else '' }}" 
+                                       placeholder="Nome da empresa (opcional)">
+                                {% if form.company.errors %}
+                                    <div class="text-danger small">{{ form.company.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="position" class="form-label">Cargo</label>
+                                <input type="text" class="form-control" id="position" name="position" 
+                                       value="{{ form.position.data if form.position.data else '' }}" 
+                                       placeholder="Cargo na empresa">
+                                {% if form.position.errors %}
+                                    <div class="text-danger small">{{ form.position.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cnpj" class="form-label">CNPJ</label>
+                                <input type="text" class="form-control" id="cnpj" name="cnpj" 
+                                       value="{{ form.cnpj.data if form.cnpj.data else '' }}" 
+                                       placeholder="00.000.000/0000-00">
+                                {% if form.cnpj.errors %}
+                                    <div class="text-danger small">{{ form.cnpj.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cpf" class="form-label">CPF</label>
+                                <input type="text" class="form-control" id="cpf" name="cpf" 
+                                       value="{{ form.cpf.data if form.cpf.data else '' }}" 
+                                       placeholder="000.000.000-00">
+                                {% if form.cpf.errors %}
+                                    <div class="text-danger small">{{ form.cpf.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <h6 class="mb-3 text-primary mt-4">Endereço</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cep" class="form-label">CEP</label>
+                                <input type="text" class="form-control" id="cep" name="cep" 
+                                       value="{{ form.cep.data if form.cep.data else '' }}" 
+                                       placeholder="00000-000">
+                                {% if form.cep.errors %}
+                                    <div class="text-danger small">{{ form.cep.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">Cidade</label>
+                                <input type="text" class="form-control" id="city" name="city" 
+                                       value="{{ form.city.data if form.city.data else '' }}">
+                                {% if form.city.errors %}
+                                    <div class="text-danger small">{{ form.city.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">Estado</label>
+                                <select class="form-select" id="state" name="state">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC" {% if form.state.data == 'AC' %}selected{% endif %}>Acre</option>
+                                    <option value="AL" {% if form.state.data == 'AL' %}selected{% endif %}>Alagoas</option>
+                                    <option value="AP" {% if form.state.data == 'AP' %}selected{% endif %}>Amapá</option>
+                                    <option value="AM" {% if form.state.data == 'AM' %}selected{% endif %}>Amazonas</option>
+                                    <option value="BA" {% if form.state.data == 'BA' %}selected{% endif %}>Bahia</option>
+                                    <option value="CE" {% if form.state.data == 'CE' %}selected{% endif %}>Ceará</option>
+                                    <option value="DF" {% if form.state.data == 'DF' %}selected{% endif %}>Distrito Federal</option>
+                                    <option value="ES" {% if form.state.data == 'ES' %}selected{% endif %}>Espírito Santo</option>
+                                    <option value="GO" {% if form.state.data == 'GO' %}selected{% endif %}>Goiás</option>
+                                    <option value="MA" {% if form.state.data == 'MA' %}selected{% endif %}>Maranhão</option>
+                                    <option value="MT" {% if form.state.data == 'MT' %}selected{% endif %}>Mato Grosso</option>
+                                    <option value="MS" {% if form.state.data == 'MS' %}selected{% endif %}>Mato Grosso do Sul</option>
+                                    <option value="MG" {% if form.state.data == 'MG' %}selected{% endif %}>Minas Gerais</option>
+                                    <option value="PA" {% if form.state.data == 'PA' %}selected{% endif %}>Pará</option>
+                                    <option value="PB" {% if form.state.data == 'PB' %}selected{% endif %}>Paraíba</option>
+                                    <option value="PR" {% if form.state.data == 'PR' %}selected{% endif %}>Paraná</option>
+                                    <option value="PE" {% if form.state.data == 'PE' %}selected{% endif %}>Pernambuco</option>
+                                    <option value="PI" {% if form.state.data == 'PI' %}selected{% endif %}>Piauí</option>
+                                    <option value="RJ" {% if form.state.data == 'RJ' %}selected{% endif %}>Rio de Janeiro</option>
+                                    <option value="RN" {% if form.state.data == 'RN' %}selected{% endif %}>Rio Grande do Norte</option>
+                                    <option value="RS" {% if form.state.data == 'RS' %}selected{% endif %}>Rio Grande do Sul</option>
+                                    <option value="RO" {% if form.state.data == 'RO' %}selected{% endif %}>Rondônia</option>
+                                    <option value="RR" {% if form.state.data == 'RR' %}selected{% endif %}>Roraima</option>
+                                    <option value="SC" {% if form.state.data == 'SC' %}selected{% endif %}>Santa Catarina</option>
+                                    <option value="SP" {% if form.state.data == 'SP' %}selected{% endif %}>São Paulo</option>
+                                    <option value="SE" {% if form.state.data == 'SE' %}selected{% endif %}>Sergipe</option>
+                                    <option value="TO" {% if form.state.data == 'TO' %}selected{% endif %}>Tocantins</option>
+                                </select>
+                                {% if form.state.errors %}
+                                    <div class="text-danger small">{{ form.state.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="address" class="form-label">Endereço Completo</label>
+                                <input type="text" class="form-control" id="address" name="address" 
+                                       value="{{ form.address.data if form.address.data else '' }}" 
+                                       placeholder="Rua, número, bairro">
+                                {% if form.address.errors %}
+                                    <div class="text-danger small">{{ form.address.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <h6 class="mb-3 text-primary mt-4">Informações Adicionais</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="source" class="form-label">Origem do Cliente</label>
+                                <select class="form-select" id="source" name="source">
+                                    <option value="">Selecione...</option>
+                                    <option value="website" {% if form.source.data == 'website' %}selected{% endif %}>Website</option>
+                                    <option value="social_media" {% if form.source.data == 'social_media' %}selected{% endif %}>Redes Sociais</option>
+                                    <option value="referral" {% if form.source.data == 'referral' %}selected{% endif %}>Indicação</option>
+                                    <option value="advertising" {% if form.source.data == 'advertising' %}selected{% endif %}>Publicidade</option>
+                                    <option value="other" {% if form.source.data == 'other' %}selected{% endif %}>Outros</option>
+                                </select>
+                                {% if form.source.errors %}
+                                    <div class="text-danger small">{{ form.source.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="notes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Informações adicionais sobre o cliente">{{ form.notes.data if form.notes.data else '' }}</textarea>
+                                {% if form.notes.errors %}
+                                    <div class="text-danger small">{{ form.notes.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{{ url_for('crm.customers') }}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Salvar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Dicas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Apenas o nome é obrigatório
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Adicione o Instagram se disponível
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Use o CEP para preenchimento automático
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Adicione observações importantes
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Defina o status adequado
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Máscara para telefone
+document.getElementById('phone').addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    e.target.value = value;
+});
+
+// Máscara para CNPJ
+document.getElementById('cnpj').addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 14) {
+        value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    }
+    e.target.value = value;
+});
+
+// Máscara para CPF
+document.getElementById('cpf').addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    e.target.value = value;
+});
+
+// Máscara para CEP
+document.getElementById('cep').addEventListener('input', function (e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 8) {
+        value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+    }
+    e.target.value = value;
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Movimentações de Estoque - ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-exchange-alt me-2"></i>Movimentações de Estoque
+        </h1>
+        <a href="{{ url_for('inventory.new_movement') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nova Movimentação
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Buscar Produto</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request.args.get('search', '') }}" placeholder="Nome do produto...">
+                </div>
+                <div class="col-md-2">
+                    <label for="movement_type" class="form-label">Tipo</label>
+                    <select class="form-select" id="movement_type" name="movement_type">
+                        <option value="">Todos</option>
+                        <option value="in" {{ 'selected' if request.args.get('movement_type') == 'in' }}>Entrada</option>
+                        <option value="out" {{ 'selected' if request.args.get('movement_type') == 'out' }}>Saída</option>
+                        <option value="adjustment" {{ 'selected' if request.args.get('movement_type') == 'adjustment' }}>Ajuste</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('inventory.movements') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ movements|selectattr('movement_type', 'equalto', 'in')|list|length }}</h4>
+                            <small>Entradas</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-down fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ movements|selectattr('movement_type', 'equalto', 'out')|list|length }}</h4>
+                            <small>Saídas</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-arrow-up fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ movements|selectattr('movement_type', 'equalto', 'adjustment')|list|length }}</h4>
+                            <small>Ajustes</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cog fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ movements|length }}</h4>
+                            <small>Total</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-list fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Movimentações -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>Histórico de Movimentações
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if movements %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Produto</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                            <th>Estoque Anterior</th>
+                            <th>Estoque Atual</th>
+                            <th>Motivo</th>
+                            <th>Usuário</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movement in movements %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>{{ movement.movement_date.strftime('%d/%m/%Y') }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ movement.movement_date.strftime('%H:%M') }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-3">
+                                        <div class="avatar-title bg-light rounded-circle">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ movement.product.name if movement.product else 'Produto Removido' }}</h6>
+                                        <small class="text-muted">{{ movement.product.sku if movement.product else '' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if movement.movement_type == 'in' %}
+                                    <span class="badge bg-success">Entrada</span>
+                                {% elif movement.movement_type == 'out' %}
+                                    <span class="badge bg-danger">Saída</span>
+                                {% elif movement.movement_type == 'adjustment' %}
+                                    <span class="badge bg-warning">Ajuste</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-bold {{ 'text-success' if movement.movement_type == 'in' else 'text-danger' }}">
+                                    {{ '+' if movement.movement_type == 'in' else '-' }}{{ movement.quantity }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ movement.product.unit|upper if movement.product else '' }}</small>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ movement.previous_stock or 'N/A' }}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ movement.current_stock or 'N/A' }}</span>
+                            </td>
+                            <td>
+                                {% if movement.reason %}
+                                    <span class="text-muted">{{ movement.reason[:30] }}{% if movement.reason|length > 30 %}...{% endif %}</span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm me-2">
+                                        <div class="avatar-title bg-light rounded-circle">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small class="fw-bold">{{ movement.user.username if movement.user else 'Sistema' }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if pagination and pagination.pages > 1 %}
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('inventory.movements', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('inventory.movements', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('inventory.movements', page=pagination.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-exchange-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Nenhuma movimentação encontrada</h5>
+                <p class="text-muted">Não há movimentações que correspondam aos filtros aplicados.</p>
+                <a href="{{ url_for('inventory.new_movement') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Criar Primeira Movimentação
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit do formulário de filtros quando mudar select
+document.getElementById('movement_type').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+{% endblock %}
+
