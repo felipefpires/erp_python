@@ -1,168 +1,150 @@
-# 🚀 Guia de Deploy - Sistema ERP
+# 🚀 Guia de Deploy Automatizado - Sistema ERP
 
-Este guia explica como fazer o deploy do Sistema ERP em um servidor Ubuntu/Proxmox.
+Este guia explica como fazer o deploy **100% automatizado** do Sistema ERP em um servidor Ubuntu.
 
 ## 📋 Pré-requisitos
 
 - Servidor Ubuntu 20.04+ ou similar
 - Acesso SSH com privilégios sudo
-- Python 3.8+
-- Git (opcional, para atualizações)
+- Repositório GitHub configurado
+- Conectividade com internet
 
-## 🔧 Preparação do Servidor
+## 🚀 Deploy Automatizado (Recomendado)
 
-### 1. Conectar ao Servidor
+### 1. **Instalação Inicial (Primeira Vez)**
 
 ```bash
+# Conectar ao servidor
 ssh usuario@seu-servidor.com
-```
 
-### 2. Atualizar Sistema
-
-```bash
-sudo apt update && sudo apt upgrade -y
-```
-
-### 3. Transferir Código
-
-**Opção A: Via SCP (recomendado para primeira vez)**
-```bash
-# No seu computador local
-scp -r . usuario@seu-servidor.com:/tmp/erp-system/
-```
-
-**Opção B: Via Git**
-```bash
-# No servidor
+# Baixar e executar script de instalação
 cd /tmp
-git clone https://github.com/seu-usuario/erp-system.git
+wget https://raw.githubusercontent.com/seu-usuario/erp-project/main/scripts/deploy/install.sh
+chmod +x install.sh
+./install.sh https://github.com/seu-usuario/erp-project.git
 ```
 
-## 🚀 Deploy Automático
-
-### 1. Executar Script de Deploy
+**OU se você já tem o código no servidor:**
 
 ```bash
-# No servidor
-cd /tmp/erp-system
-chmod +x deploy.sh
-./deploy.sh
+cd /caminho/para/erp-project
+chmod +x scripts/deploy/install.sh
+./scripts/deploy/install.sh https://github.com/seu-usuario/erp-project.git
 ```
 
-O script irá:
-- ✅ Instalar dependências do sistema
-- ✅ Criar usuário `erp` para a aplicação
-- ✅ Configurar ambiente virtual Python
-- ✅ Instalar dependências Python
-- ✅ Configurar Nginx como proxy reverso
-- ✅ Configurar Supervisor para gerenciar processos
-- ✅ Inicializar banco de dados
-- ✅ Iniciar serviços
+### 2. **O que o Script Faz Automaticamente**
 
-### 2. Verificar Deploy
+✅ **Instala todas as dependências do sistema**
+✅ **Cria usuário `erp` para a aplicação**
+✅ **Configura ambiente virtual Python**
+✅ **Instala dependências Python**
+✅ **Configura Nginx como proxy reverso**
+✅ **Configura Supervisor para gerenciar processos**
+✅ **Inicializa banco de dados**
+✅ **Inicia todos os serviços**
+✅ **Testa a aplicação**
+✅ **Instala script de gerenciamento**
 
-```bash
-# Verificar status
-sudo supervisorctl status erp-system
-sudo systemctl status nginx
+### 3. **Acesso ao Sistema**
 
-# Ver logs
-tail -f /opt/erp-system/logs/error.log
+Após a instalação, acesse:
+```
+http://IP_DO_SERVIDOR
 ```
 
 ## 🔧 Gerenciamento do Sistema
 
 ### Script de Gerenciamento
 
-```bash
-# Copiar script de gerenciamento
-sudo cp manage.sh /usr/local/bin/erp-manage
-sudo chmod +x /usr/local/bin/erp-manage
-
-# Usar o script
-erp-manage status    # Ver status
-erp-manage logs      # Ver logs
-erp-manage restart   # Reiniciar
-erp-manage backup    # Fazer backup
-```
-
-### Comandos Úteis
+O sistema instala automaticamente o comando `erp-manage`:
 
 ```bash
-# Ver status dos serviços
-sudo supervisorctl status
-sudo systemctl status nginx
+# Ver status do sistema
+erp-manage status
 
 # Ver logs em tempo real
+erp-manage logs
+
+# Verificar saúde do sistema
+erp-manage health
+
+# Reiniciar o sistema
+erp-manage restart
+
+# Fazer backup
+erp-manage backup
+
+# Atualizar do GitHub
+erp-manage update-git
+
+# Limpar logs e backups antigos
+erp-manage clean
+
+# Ver ajuda completa
+erp-manage help
+```
+
+## 🔄 Atualizações Automáticas
+
+### 1. **Atualização Manual**
+
+```bash
+# Atualizar do GitHub
+erp-manage update-git
+```
+
+### 2. **Atualização Automática (Cron)**
+
+Para atualizações automáticas diárias:
+
+```bash
+# Editar crontab
+crontab -e
+
+# Adicionar linha para atualização diária às 3h da manhã
+0 3 * * * /opt/erp-system/scripts/deploy/auto-update.sh https://github.com/seu-usuario/erp-project.git
+```
+
+### 3. **Atualização Semanal**
+
+```bash
+# Atualização semanal aos domingos às 2h da manhã
+0 2 * * 0 /opt/erp-system/scripts/deploy/auto-update.sh https://github.com/seu-usuario/erp-project.git
+```
+
+## 📊 Monitoramento
+
+### 1. **Verificar Status**
+
+```bash
+# Status completo
+erp-manage status
+
+# Saúde do sistema
+erp-manage health
+
+# Logs em tempo real
+erp-manage logs
+```
+
+### 2. **Logs Importantes**
+
+```bash
+# Logs da aplicação
 tail -f /opt/erp-system/logs/access.log
 tail -f /opt/erp-system/logs/error.log
 
-# Reiniciar serviços
-sudo supervisorctl restart erp-system
-sudo systemctl reload nginx
+# Logs do Nginx
+sudo tail -f /var/log/nginx/erp_access.log
+sudo tail -f /var/log/nginx/erp_error.log
 
-# Fazer backup manual
-sudo -u erp cp /opt/erp-system/instance/erp.db /opt/erp-system/backups/
-```
-
-## 🌐 Configuração de Domínio
-
-### 1. Configurar DNS
-
-Aponte seu domínio para o IP do servidor:
-```
-A    erp.seudominio.com    ->    IP_DO_SERVIDOR
-```
-
-### 2. Configurar SSL (Let's Encrypt)
-
-```bash
-# Instalar Certbot
-sudo apt install certbot python3-certbot-nginx
-
-# Obter certificado
-sudo certbot --nginx -d erp.seudominio.com
-
-# Renovar automaticamente
-sudo crontab -e
-# Adicionar: 0 12 * * * /usr/bin/certbot renew --quiet
-```
-
-### 3. Atualizar Configuração Nginx
-
-Editar `/etc/nginx/sites-available/erp-system`:
-```nginx
-server {
-    listen 80;
-    server_name erp.seudominio.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name erp.seudominio.com;
-    
-    ssl_certificate /etc/letsencrypt/live/erp.seudominio.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/erp.seudominio.com/privkey.pem;
-    
-    location / {
-        include proxy_params;
-        proxy_pass http://unix:/opt/erp-system/erp-system.sock;
-    }
-    
-    location /static {
-        alias /opt/erp-system/app/static;
-    }
-    
-    location /uploads {
-        alias /opt/erp-system/uploads;
-    }
-}
+# Logs de atualização automática
+tail -f /opt/erp-system/logs/auto-update.log
 ```
 
 ## 🔒 Segurança
 
-### 1. Firewall
+### 1. **Firewall**
 
 ```bash
 # Instalar UFW
@@ -174,140 +156,147 @@ sudo ufw allow 'Nginx Full'
 sudo ufw enable
 ```
 
-### 2. Fail2ban
+### 2. **SSL/HTTPS (Opcional)**
 
 ```bash
-# Instalar Fail2ban
-sudo apt install fail2ban
+# Instalar Certbot
+sudo apt install certbot python3-certbot-nginx
 
-# Configurar
-sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
-```
+# Obter certificado
+sudo certbot --nginx -d seu-dominio.com
 
-### 3. Atualizações Automáticas
-
-```bash
-# Instalar unattended-upgrades
-sudo apt install unattended-upgrades
-
-# Configurar
-sudo dpkg-reconfigure -plow unattended-upgrades
-```
-
-## 📊 Monitoramento
-
-### 1. Logs
-
-```bash
-# Ver logs de acesso
-tail -f /opt/erp-system/logs/access.log
-
-# Ver logs de erro
-tail -f /opt/erp-system/logs/error.log
-
-# Ver logs do sistema
-sudo journalctl -u nginx -f
-sudo journalctl -u supervisor -f
-```
-
-### 2. Métricas
-
-```bash
-# Ver uso de recursos
-htop
-df -h
-free -h
-
-# Ver processos
-ps aux | grep gunicorn
-ps aux | grep nginx
-```
-
-## 🔄 Atualizações
-
-### 1. Atualização Automática
-
-```bash
-# Usar script de gerenciamento
-erp-manage update
-```
-
-### 2. Atualização Manual
-
-```bash
-# Parar serviços
-erp-manage stop
-
-# Fazer backup
-erp-manage backup
-
-# Atualizar código
-cd /opt/erp-system
-sudo -u erp git pull origin main
-
-# Atualizar dependências
-sudo -u erp /opt/erp-system/venv/bin/pip install -r requirements.txt
-
-# Executar migrações
-sudo -u erp /opt/erp-system/venv/bin/flask db upgrade
-
-# Reiniciar serviços
-erp-manage start
+# Renovar automaticamente
+sudo crontab -e
+# Adicionar: 0 12 * * * /usr/bin/certbot renew --quiet
 ```
 
 ## 🆘 Troubleshooting
 
 ### Problemas Comuns
 
-**1. Serviço não inicia**
+**1. Aplicação não responde**
 ```bash
+# Verificar status
+erp-manage status
+
 # Verificar logs
 erp-manage logs
-sudo journalctl -u supervisor -f
 
-# Verificar permissões
-ls -la /opt/erp-system/
-sudo chown -R erp:erp /opt/erp-system/
-```
-
-**2. Erro 502 Bad Gateway**
-```bash
-# Verificar se o socket existe
-ls -la /opt/erp-system/erp-system.sock
-
-# Reiniciar serviços
+# Reiniciar
 erp-manage restart
 ```
 
-**3. Erro de permissão**
+**2. Erro de permissão**
 ```bash
 # Corrigir permissões
 sudo chown -R erp:erp /opt/erp-system/
 sudo chmod -R 755 /opt/erp-system/
 ```
 
-**4. Banco de dados corrompido**
+**3. Atualização falhou**
 ```bash
-# Restaurar backup
-sudo -u erp cp /opt/erp-system/backups/erp_backup_YYYYMMDD_HHMMSS.db /opt/erp-system/instance/erp.db
-erp-manage restart
+# Verificar logs de atualização
+tail -f /opt/erp-system/logs/auto-update.log
+
+# Restaurar backup manualmente
+erp-manage backup
 ```
 
-## 📞 Suporte
+**4. Nginx não carrega**
+```bash
+# Verificar configuração
+sudo nginx -t
 
-Para problemas específicos:
+# Reiniciar Nginx
+sudo systemctl restart nginx
+```
 
-1. Verificar logs: `erp-manage logs`
-2. Verificar status: `erp-manage status`
-3. Fazer backup antes de qualquer alteração
-4. Documentar mudanças feitas
+## 📁 Estrutura de Diretórios
+
+```
+/opt/erp-system/
+├── app/                    # Código da aplicação
+├── venv/                   # Ambiente virtual Python
+├── instance/               # Banco de dados
+├── uploads/                # Arquivos enviados
+├── logs/                   # Logs da aplicação
+├── backups/                # Backups automáticos
+├── .env                    # Variáveis de ambiente
+└── erp-system.sock         # Socket Unix
+```
+
+## 🔄 Backup e Restauração
+
+### Backup Automático
+
+O sistema faz backup automático antes de cada atualização:
+
+```bash
+# Verificar backups
+ls -la /opt/erp-system/backups/
+
+# Fazer backup manual
+erp-manage backup
+```
+
+### Restauração Manual
+
+```bash
+# Parar serviços
+erp-manage stop
+
+# Restaurar backup
+sudo tar -xzf /opt/erp-system/backups/erp_backup_YYYYMMDD_HHMMSS.tar.gz -C /opt/erp-system/
+
+# Reiniciar
+erp-manage start
+```
+
+## 📞 Comandos Úteis
+
+```bash
+# Ver IP do servidor
+hostname -I
+
+# Ver uso de disco
+df -h
+
+# Ver uso de memória
+free -h
+
+# Ver processos
+ps aux | grep erp
+
+# Ver portas em uso
+sudo netstat -tlnp
+```
+
+## 🎯 Fluxo de Trabalho Recomendado
+
+1. **Desenvolvimento**: Faça alterações no código
+2. **Teste**: Teste localmente
+3. **Commit**: Faça commit e push para GitHub
+4. **Deploy**: Execute `erp-manage update-git` no servidor
+5. **Verificação**: Use `erp-manage health` para confirmar
 
 ## 📝 Notas Importantes
 
-- ✅ Sempre faça backup antes de atualizações
-- ✅ Mantenha o sistema atualizado
-- ✅ Monitore logs regularmente
-- ✅ Configure alertas de monitoramento
-- ✅ Teste em ambiente de desenvolvimento antes de produção
+- ✅ **Sempre faça backup antes de atualizações**
+- ✅ **Monitore logs regularmente**
+- ✅ **Configure alertas de monitoramento**
+- ✅ **Mantenha o sistema atualizado**
+- ✅ **Teste em ambiente de desenvolvimento antes de produção**
+
+## 🚀 Próximos Passos
+
+Após o deploy:
+
+1. **Configurar domínio** (se necessário)
+2. **Configurar SSL/HTTPS** (recomendado)
+3. **Configurar backup externo** (recomendado)
+4. **Configurar monitoramento** (recomendado)
+5. **Configurar atualizações automáticas** (recomendado)
+
+---
+
+**🎉 Sistema ERP pronto para uso!**
