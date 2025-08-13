@@ -169,6 +169,12 @@ EOF
 
 # Configurar Nginx corretamente
 log "🌐 Configurando Nginx..."
+
+# Limpar configurações existentes
+sudo rm -f /etc/nginx/sites-enabled/*
+sudo rm -f /etc/nginx/sites-available/$SERVICE_NAME
+
+# Criar configuração limpa
 sudo tee /etc/nginx/sites-available/$SERVICE_NAME > /dev/null <<EOF
 server {
     listen 80 default_server;
@@ -212,8 +218,7 @@ server {
 }
 EOF
 
-# Remover site padrão e ativar nosso site
-sudo rm -f /etc/nginx/sites-enabled/default
+# Ativar apenas nosso site
 sudo ln -sf /etc/nginx/sites-available/$SERVICE_NAME /etc/nginx/sites-enabled/
 
 # Verificar configuração do Nginx
