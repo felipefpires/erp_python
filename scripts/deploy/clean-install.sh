@@ -119,7 +119,8 @@ sudo apt install -y python3 python3-pip python3-venv nginx supervisor git curl w
 # Baixar código do GitHub
 log "📥 Baixando código do GitHub..."
 cd /tmp
-rm -rf erp-system-temp
+sudo rm -rf erp-system-temp
+sudo rm -rf erp_python
 git clone $GITHUB_REPO erp-system-temp
 
 if [ ! -d "erp-system-temp" ]; then
