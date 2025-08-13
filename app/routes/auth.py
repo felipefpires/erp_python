@@ -9,22 +9,35 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        print(f"DEBUG: Usuário já autenticado: {current_user.username}")
         return redirect(url_for('main.dashboard'))
     
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
+        print(f"DEBUG: Tentativa de login - Usuário: {username}")
+        
         user = User.query.filter_by(username=username).first()
         
-        if user and user.check_password(password):
-            login_user(user)
-            user.last_login = db.func.now()
-            db.session.commit()
-            
-            next_page = request.args.get('next')
-            return redirect(next_page or url_for('main.dashboard'))
+        if user:
+            print(f"DEBUG: Usuário encontrado: {user.username}, Ativo: {user.is_active}")
+            if user.check_password(password):
+                print(f"DEBUG: Senha correta, fazendo login...")
+                login_user(user, remember=True)
+                user.last_login = db.func.now()
+                db.session.commit()
+                
+                print(f"DEBUG: Login realizado com sucesso para {user.username}")
+                next_page = request.args.get('next')
+                redirect_url = next_page or url_for('main.dashboard')
+                print(f"DEBUG: Redirecionando para: {redirect_url}")
+                return redirect(redirect_url)
+            else:
+                print(f"DEBUG: Senha incorreta para usuário {username}")
+                flash('Usuário ou senha inválidos', 'error')
         else:
+            print(f"DEBUG: Usuário não encontrado: {username}")
             flash('Usuário ou senha inválidos', 'error')
     
     return render_template('auth/login.html')

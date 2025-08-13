@@ -28,6 +28,13 @@ def create_app(config_name=None):
     # Configuração do login
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Por favor, faça login para acessar esta página.'
+    login_manager.login_message_category = 'info'
+    
+    # Configurações de sessão para desenvolvimento
+    if app.config.get('DEBUG', False):
+        app.config['SESSION_COOKIE_SECURE'] = False
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     
     # Registro dos blueprints
     from app.routes.auth import auth_bp
