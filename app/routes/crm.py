@@ -264,9 +264,9 @@ def api_get_customers():
         } for c in customers
     ])
 
-@crm_bp.route('/api/customers/<int:id>', methods=['GET'])
-def api_get_customer(id):
-    customer = Customer.query.get_or_404(id)
+@crm_bp.route('/api/customers/<string:name>', methods=['GET'])
+def api_get_customer(name):
+    customer = Customer.query.filter_by(name=name).first_or_404()
     return jsonify({
         'id': customer.id,
         'name': customer.name,
