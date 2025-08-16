@@ -32,11 +32,6 @@ read -p "Digite o branch principal (main/master): " BRANCH
 
 # Clonar repositório
 echo "📥 Clonando repositório..."
-cd /opt
-if [ ! -d "erp-system" ]; then
-    git clone $REPO_URL erp-system
-fi
-chown -R erp:erp /opt/erp-system
 
 # Configurar ambiente virtual
 echo "🐍 Configurando ambiente virtual..."

@@ -34,10 +34,10 @@ fi
 # Baixar o projeto
 echo ""
 echo "📥 Baixando projeto do GitHub..."
-cd /tmp
-rm -rf erp-temp
-git clone $REPO_URL erp-temp
-cd erp-temp
+mkdir -p /opt/erp-system
+cd /opt/erp-system
+git clone $REPO_URL .
+chown -R erp:erp /opt/erp-system
 
 # Verificar se o diretório scripts/deploy existe
 if [ ! -d "scripts/deploy" ]; then
@@ -58,8 +58,6 @@ sed -i "s|BRANCH=.*|BRANCH=\"$BRANCH\"|g" scripts/deploy/setup_production.sh
 ./scripts/deploy/setup_production.sh
 
 # Limpar arquivos temporários
-cd /
-rm -rf /tmp/erp-temp
 
 echo ""
 echo "✅ Instalação concluída com sucesso!"
