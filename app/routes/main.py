@@ -73,6 +73,32 @@ def dashboard():
         sales_query.subquery().c.id == Sale.id
     ).scalar() or 0
     
+    # Novos clientes no período
+    customers_query = Customer.query
+    if start_date:
+        customers_query = customers_query.filter(Customer.created_at >= start_date)
+    if end_date:
+        customers_query = customers_query.filter(Customer.created_at <= end_date)
+    new_customers_period = customers_query.count()
+
+    # Ticket médio no período
+    average_ticket_period = filtered_sales_total / filtered_sales_count if filtered_sales_count > 0 else 0
+
+    # Top 5 clientes por valor de compra no período
+    top_customers_query = db.session.query(
+        Customer.name,
+        func.sum(Sale.total_amount).label('total_spent')
+    ).join(Sale).filter(Sale.customer_id == Customer.id)
+    
+    if start_date:
+        top_customers_query = top_customers_query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        top_customers_query = top_customers_query.filter(Sale.sale_date <= end_date)
+    
+    top_5_customers = top_customers_query.group_by(Customer.name).order_by(
+        func.sum(Sale.total_amount).desc()
+    ).limit(5).all()
+
     # Produtos com estoque baixo (não filtrado por data, é um estado atual)
     # Query base para produtos
     products_query = Product.query
@@ -153,6 +179,9 @@ def dashboard():
                          total_sales=total_sales,
                          filtered_sales_count=filtered_sales_count,
                          filtered_sales_total=filtered_sales_total,
+                         new_customers_period=new_customers_period,
+                         average_ticket_period=average_ticket_period,
+                         top_5_customers=top_5_customers,
                          low_stock_products=low_stock_products,
                          all_filtered_products=all_filtered_products, # Novo: todos os produtos filtrados
                          upcoming_appointments=upcoming_appointments,
