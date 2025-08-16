@@ -243,80 +243,77 @@ def reports():
 
 # API Endpoints
 @crm_bp.route('/api/customers', methods=['GET'])
-@login_required
 def api_get_customers():
-   customers = Customer.query.all()
-   return jsonify([
-       {
-           'id': c.id,
-           'name': c.name,
-           'email': c.email,
-           'phone': c.phone,
-           'instagram': c.instagram,
-           'address': c.address,
-           'city': c.city,
-           'state': c.state,
-           'zip_code': c.zip_code,
-           'company': c.company,
-           'cpf_cnpj': c.cpf_cnpj,
-           'status': c.status,
-           'created_at': c.created_at.isoformat(),
-           'updated_at': c.updated_at.isoformat()
-       } for c in customers
-   ])
+    customers = Customer.query.all()
+    return jsonify([
+        {
+            'id': c.id,
+            'name': c.name,
+            'email': c.email,
+            'phone': c.phone,
+            'instagram': c.instagram,
+            'address': c.address,
+            'city': c.city,
+            'state': c.state,
+            'zip_code': c.zip_code,
+            'company': c.company,
+            'cpf_cnpj': c.cpf_cnpj,
+            'status': c.status,
+            'created_at': c.created_at.isoformat(),
+            'updated_at': c.updated_at.isoformat()
+        } for c in customers
+    ])
 
 @crm_bp.route('/api/customers/<int:id>', methods=['GET'])
-@login_required
 def api_get_customer(id):
-   customer = Customer.query.get_or_404(id)
-   return jsonify({
-       'id': customer.id,
-       'name': customer.name,
-       'email': customer.email,
-       'phone': customer.phone,
-       'instagram': customer.instagram,
-       'address': customer.address,
-       'city': customer.city,
-       'state': customer.state,
-       'zip_code': customer.zip_code,
-       'company': customer.company,
-       'cpf_cnpj': customer.cpf_cnpj,
-       'status': customer.status,
-       'created_at': customer.created_at.isoformat(),
-       'updated_at': customer.updated_at.isoformat()
-   })
+    customer = Customer.query.get_or_404(id)
+    return jsonify({
+        'id': customer.id,
+        'name': customer.name,
+        'email': customer.email,
+        'phone': customer.phone,
+        'instagram': customer.instagram,
+        'address': customer.address,
+        'city': customer.city,
+        'state': customer.state,
+        'zip_code': customer.zip_code,
+        'company': customer.company,
+        'cpf_cnpj': customer.cpf_cnpj,
+        'status': customer.status,
+        'created_at': customer.created_at.isoformat(),
+        'updated_at': customer.updated_at.isoformat()
+    })
 
 @crm_bp.route('/api/customers', methods=['POST'])
-@login_required
 def api_create_customer():
-   data = request.get_json()
-   if not data or not data.get('name'):
-       return jsonify({'error': 'Missing name'}), 400
+    data = request.get_json()
+    if not data or not data.get('name'):
+        return jsonify({'error': 'Missing name'}), 400
 
-   customer = Customer(
-       name=data.get('name'),
-       email=data.get('email'),
-       phone=data.get('phone'),
-       instagram=data.get('instagram'),
-       address=data.get('address'),
-       city=data.get('city'),
-       state=data.get('state'),
-       zip_code=data.get('zip_code'),
-       company=data.get('company'),
-       cpf_cnpj=data.get('cpf_cnpj'),
-       status=data.get('status', 'active')
-   )
-   
-   db.session.add(customer)
-   db.session.commit()
-   
-   return jsonify({
-       'message': 'Customer created successfully',
-       'customer': {
-           'id': customer.id,
-           'name': customer.name,
-           'email': customer.email,
-           'phone': customer.phone,
-           'status': customer.status
-       }
-   }), 201
+    customer = Customer(
+        name=data.get('name'),
+        email=data.get('email'),
+        phone=data.get('phone'),
+        instagram=data.get('instagram'),
+        address=data.get('address'),
+        city=data.get('city'),
+        state=data.get('state'),
+        zip_code=data.get('zip_code'),
+        company=data.get('company'),
+        cpf_cnpj=data.get('cpf_cnpj'),
+        status=data.get('status', 'active')
+    )
+    
+    db.session.add(customer)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Customer created successfully',
+        'customer': {
+            'id': customer.id,
+            'name': customer.name,
+            'email': customer.email,
+            'phone': customer.phone,
+            'status': customer.status
+        }
+    }), 201
