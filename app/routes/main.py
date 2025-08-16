@@ -138,10 +138,11 @@ def dashboard():
         Transaction.created_at.desc()
     ).limit(5).all()
 
-    # Resumo do estoque
-    total_stock_quantity = db.session.query(func.sum(Product.current_stock)).scalar() or 0
-    total_stock_value = db.session.query(func.sum(Product.current_stock * Product.cost_price)).scalar() or 0
-    total_potential_sales_value = db.session.query(func.sum(Product.current_stock * Product.sale_price)).scalar() or 0
+    # Resumo do estoque (agora baseado nos produtos filtrados)
+    filtered_products_subquery = products_query.subquery()
+    total_stock_quantity = db.session.query(func.sum(filtered_products_subquery.c.current_stock)).scalar() or 0
+    total_stock_value = db.session.query(func.sum(filtered_products_subquery.c.current_stock * filtered_products_subquery.c.cost_price)).scalar() or 0
+    total_potential_sales_value = db.session.query(func.sum(filtered_products_subquery.c.current_stock * filtered_products_subquery.c.sale_price)).scalar() or 0
     
     # Buscar categorias para o filtro de produtos
     categories = Category.query.all()
