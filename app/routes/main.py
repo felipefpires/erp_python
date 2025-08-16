@@ -16,40 +16,87 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+
+    start_date = None
+    end_date = None
+
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        except ValueError:
+            flash('Formato de data inicial inválido. Use YYYY-MM-DD.', 'error')
+            start_date = None
+    
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        except ValueError:
+            flash('Formato de data final inválido. Use YYYY-MM-DD.', 'error')
+            end_date = None
+
+    # Default to current month if no date range is provided
+    if not start_date and not end_date:
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        start_date = datetime(current_year, current_month, 1)
+        end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    elif start_date and not end_date:
+        # If only start_date is provided, set end_date to end of that month
+        end_date = (start_date.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    elif not start_date and end_date:
+        # If only end_date is provided, set start_date to beginning of that month
+        start_date = end_date.replace(day=1)
+
+    # Ensure end_date is always at the end of the day
+    if end_date:
+        end_date = end_date.replace(hour=23, minute=59, second=59)
+
     # Estatísticas do dashboard
     total_customers = Customer.query.count()
     total_products = Product.query.count()
     total_sales = Sale.query.count()
     
-    # Vendas do mês atual
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-    monthly_sales = Sale.query.filter(
-        func.extract('month', Sale.sale_date) == current_month,
-        func.extract('year', Sale.sale_date) == current_year
-    ).count()
+    # Vendas no período
+    sales_query = Sale.query
+    if start_date:
+        sales_query = sales_query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        sales_query = sales_query.filter(Sale.sale_date <= end_date)
     
-    # Produtos com estoque baixo
+    filtered_sales_count = sales_query.count()
+    filtered_sales_total = db.session.query(func.sum(Sale.total_amount)).filter(
+        sales_query.subquery().c.id == Sale.id
+    ).scalar() or 0
+    
+    # Produtos com estoque baixo (não filtrado por data, é um estado atual)
     low_stock_products = Product.query.filter(
         Product.current_stock <= Product.min_stock
     ).limit(5).all()
     
-    # Próximos agendamentos
-    upcoming_appointments = Appointment.query.filter(
+    # Próximos agendamentos (filtrado por data)
+    appointments_query = Appointment.query.filter(
         Appointment.appointment_date >= datetime.now(),
         Appointment.status == 'scheduled'
-    ).order_by(Appointment.appointment_date).limit(5).all()
+    )
+    if start_date:
+        appointments_query = appointments_query.filter(Appointment.appointment_date >= start_date)
+    if end_date:
+        appointments_query = appointments_query.filter(Appointment.appointment_date <= end_date)
     
-    # Transações recentes
-    recent_transactions = Transaction.query.order_by(
+    upcoming_appointments = appointments_query.order_by(Appointment.appointment_date).limit(5).all()
+    
+    # Transações recentes (filtrado por data)
+    transactions_query = Transaction.query
+    if start_date:
+        transactions_query = transactions_query.filter(Transaction.created_at >= start_date)
+    if end_date:
+        transactions_query = transactions_query.filter(Transaction.created_at <= end_date)
+    
+    recent_transactions = transactions_query.order_by(
         Transaction.created_at.desc()
     ).limit(5).all()
-    
-    # Total de vendas do mês
-    monthly_sales_total = db.session.query(func.sum(Sale.total_amount)).filter(
-        func.extract('month', Sale.sale_date) == current_month,
-        func.extract('year', Sale.sale_date) == current_year
-    ).scalar() or 0
 
     # Resumo do estoque
     total_stock_quantity = db.session.query(func.sum(Product.current_stock)).scalar() or 0
@@ -60,15 +107,17 @@ def dashboard():
                          total_customers=total_customers,
                          total_products=total_products,
                          total_sales=total_sales,
-                         monthly_sales=monthly_sales,
-                         monthly_sales_total=monthly_sales_total,
+                         filtered_sales_count=filtered_sales_count,
+                         filtered_sales_total=filtered_sales_total,
                          low_stock_products=low_stock_products,
                          upcoming_appointments=upcoming_appointments,
                          recent_transactions=recent_transactions,
                          total_stock_quantity=int(total_stock_quantity),
                          total_stock_value=float(total_stock_value),
                          total_potential_sales_value=float(total_potential_sales_value),
-                         current_date=datetime.now())
+                         current_date=datetime.now(),
+                         start_date=start_date.strftime('%Y-%m-%d') if start_date else '',
+                         end_date=end_date.strftime('%Y-%m-%d') if end_date else '')
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 @login_required

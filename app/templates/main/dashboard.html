@@ -7,9 +7,22 @@
     <!-- Page header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Dashboard</h1>
-        <div class="text-muted">
-            <i class="fas fa-calendar me-1"></i>
-            {{ current_date.strftime('%d/%m/%Y') if current_date else '' }}
+        <div class="d-flex align-items-center">
+            <form action="{{ url_for('main.dashboard') }}" method="GET" class="d-flex align-items-center me-3">
+                <div class="input-group input-group-sm me-2">
+                    <span class="input-group-text">De</span>
+                    <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="input-group input-group-sm me-2">
+                    <span class="input-group-text">Até</span>
+                    <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+            </form>
+            <div class="text-muted">
+                <i class="fas fa-calendar me-1"></i>
+                {{ current_date.strftime('%d/%m/%Y') if current_date else '' }}
+            </div>
         </div>
     </div>
 
@@ -52,8 +65,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <div class="stats-number">{{ monthly_sales }}</div>
-                            <div class="text-white-50">Vendas do Mês</div>
+                            <div class="stats-number">{{ filtered_sales_count }}</div>
+                            <div class="text-white-50">Vendas no Período</div>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-chart-line fa-2x text-white-50"></i>
@@ -116,8 +129,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <div class="stats-number">R$ {{ "%.2f"|format(monthly_sales_total) }}</div>
-                            <div class="text-white-50">Receita do Mês</div>
+                            <div class="stats-number">R$ {{ "%.2f"|format(filtered_sales_total) }}</div>
+                            <div class="text-white-50">Receita no Período</div>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-dollar-sign fa-2x text-white-50"></i>
