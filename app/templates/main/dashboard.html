@@ -84,6 +84,22 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
+                            <div class="stats-number">R$ {{ "%.2f"|format(total_potential_sales_value) }}</div>
+                            <div class="text-white-50">Valor Potencial de Venda</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hand-holding-usd fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
                             <div class="stats-number">R$ {{ "%.2f"|format(total_stock_value) }}</div>
                             <div class="text-white-50">Valor Total do Estoque</div>
                         </div>

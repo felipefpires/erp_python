@@ -54,6 +54,7 @@ def dashboard():
     # Resumo do estoque
     total_stock_quantity = db.session.query(func.sum(Product.current_stock)).scalar() or 0
     total_stock_value = db.session.query(func.sum(Product.current_stock * Product.cost_price)).scalar() or 0
+    total_potential_sales_value = db.session.query(func.sum(Product.current_stock * Product.sale_price)).scalar() or 0
     
     return render_template('main/dashboard.html',
                          total_customers=total_customers,
@@ -66,6 +67,7 @@ def dashboard():
                          recent_transactions=recent_transactions,
                          total_stock_quantity=int(total_stock_quantity),
                          total_stock_value=float(total_stock_value),
+                         total_potential_sales_value=float(total_potential_sales_value),
                          current_date=datetime.now())
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
