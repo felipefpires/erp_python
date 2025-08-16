@@ -157,6 +157,7 @@ update() {
     # Atualizar código
     git fetch origin erp_python
     git reset --hard origin/erp_python
+    git pull origin erp_python
     
     # Atualizar dependências
     source venv/bin/activate
