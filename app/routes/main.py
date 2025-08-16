@@ -18,6 +18,9 @@ main_bp = Blueprint('main', __name__)
 def dashboard():
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
+    product_search = request.args.get('product_search', '').strip()
+    product_category_id = request.args.get('product_category', type=int)
+    product_stock_status = request.args.get('product_stock_status', '')
 
     start_date = None
     end_date = None
@@ -71,9 +74,46 @@ def dashboard():
     ).scalar() or 0
     
     # Produtos com estoque baixo (não filtrado por data, é um estado atual)
-    low_stock_products = Product.query.filter(
+    # Query base para produtos
+    products_query = Product.query
+
+    # Aplicar filtros de produto
+    if product_search:
+        products_query = products_query.filter(
+            or_(
+                Product.name.ilike(f'%{product_search}%'),
+                Product.sku.ilike(f'%{product_search}%'),
+                Product.barcode.ilike(f'%{product_search}%')
+            )
+        )
+    
+    if product_category_id:
+        products_query = products_query.filter(Product.category_id == product_category_id)
+    
+    if product_stock_status == 'in_stock':
+        products_query = products_query.filter(
+            Product.current_stock > func.coalesce(Product.min_stock, 0)
+        )
+    elif product_stock_status == 'low_stock':
+        products_query = products_query.filter(
+            Product.current_stock > 0,
+            Product.current_stock <= func.coalesce(Product.min_stock, 0)
+        )
+    elif product_stock_status == 'out_of_stock':
+        products_query = products_query.filter(
+            or_(
+                Product.current_stock == 0,
+                Product.current_stock.is_(None)
+            )
+        )
+
+    # Produtos com estoque baixo (agora filtrados também pelos parâmetros gerais de produto)
+    low_stock_products = products_query.filter(
         Product.current_stock <= Product.min_stock
     ).limit(5).all()
+
+    # Todos os produtos (com filtros aplicados)
+    all_filtered_products = products_query.order_by(Product.name.asc()).all()
     
     # Próximos agendamentos (filtrado por data)
     appointments_query = Appointment.query.filter(
@@ -103,6 +143,9 @@ def dashboard():
     total_stock_value = db.session.query(func.sum(Product.current_stock * Product.cost_price)).scalar() or 0
     total_potential_sales_value = db.session.query(func.sum(Product.current_stock * Product.sale_price)).scalar() or 0
     
+    # Buscar categorias para o filtro de produtos
+    categories = Category.query.all()
+
     return render_template('main/dashboard.html',
                          total_customers=total_customers,
                          total_products=total_products,
@@ -110,6 +153,7 @@ def dashboard():
                          filtered_sales_count=filtered_sales_count,
                          filtered_sales_total=filtered_sales_total,
                          low_stock_products=low_stock_products,
+                         all_filtered_products=all_filtered_products, # Novo: todos os produtos filtrados
                          upcoming_appointments=upcoming_appointments,
                          recent_transactions=recent_transactions,
                          total_stock_quantity=int(total_stock_quantity),
@@ -117,7 +161,11 @@ def dashboard():
                          total_potential_sales_value=float(total_potential_sales_value),
                          current_date=datetime.now(),
                          start_date=start_date.strftime('%Y-%m-%d') if start_date else '',
-                         end_date=end_date.strftime('%Y-%m-%d') if end_date else '')
+                         end_date=end_date.strftime('%Y-%m-%d') if end_date else '',
+                         categories=categories, # Novo: categorias para filtro
+                         product_search=product_search,
+                         product_category_id=product_category_id,
+                         product_stock_status=product_stock_status)
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 @login_required

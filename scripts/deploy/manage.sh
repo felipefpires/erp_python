@@ -40,8 +40,8 @@ status() {
     systemctl status $SERVICE_NAME --no-pager -l
     
     echo ""
-    echo "🌐 Status do Nginx:"
-    systemctl status nginx --no-pager -l
+    # echo "🌐 Status do Nginx:"
+    # systemctl status nginx --no-pager -l
     
     echo ""
     echo "💾 Espaço em Disco:"
@@ -65,8 +65,8 @@ logs() {
     journalctl -u $SERVICE_NAME -n 50 --no-pager
     
     echo ""
-    echo "🌐 Logs do Nginx:"
-    tail -n 20 /var/log/nginx/error.log
+    # echo "🌐 Logs do Nginx:"
+    # tail -n 20 /var/log/nginx/error.log
 }
 
 # Comando: restart
@@ -77,7 +77,7 @@ restart() {
     check_service
     
     systemctl restart $SERVICE_NAME
-    systemctl restart nginx
+    # systemctl restart nginx
     
     sleep 3
     
@@ -179,15 +179,15 @@ health() {
         echo "❌ Serviço ERP: INATIVO"
     fi
     
-    # Verificar se o Nginx está rodando
-    if systemctl is-active --quiet nginx; then
-        echo "✅ Nginx: ATIVO"
-    else
-        echo "❌ Nginx: INATIVO"
-    fi
+    # # Verificar se o Nginx está rodando
+    # if systemctl is-active --quiet nginx; then
+    #     echo "✅ Nginx: ATIVO"
+    # else
+    #     echo "❌ Nginx: INATIVO"
+    # fi
     
     # Verificar se a aplicação responde
-    if curl -s http://localhost/ > /dev/null; then
+    if curl -s http://localhost:5000/ > /dev/null; then
         echo "✅ Aplicação Web: RESPONDENDO"
     else
         echo "❌ Aplicação Web: NÃO RESPONDE"

@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from app.models.inventory import Product, Category, StockMovement
 from app import db

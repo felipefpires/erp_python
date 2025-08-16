@@ -26,6 +26,48 @@
         </div>
     </div>
 
+    <!-- Product Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-filter me-2"></i>
+                Filtrar Produtos
+            </h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('main.dashboard') }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="product_search" class="form-label">Pesquisar Produto</label>
+                    <input type="text" class="form-control" id="product_search" name="product_search" value="{{ product_search }}" placeholder="Nome, SKU, Código de Barras">
+                </div>
+                <div class="col-md-3">
+                    <label for="product_category" class="form-label">Categoria</label>
+                    <select class="form-select" id="product_category" name="product_category">
+                        <option value="">Todas as Categorias</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if product_category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="product_stock_status" class="form-label">Status do Estoque</label>
+                    <select class="form-select" id="product_stock_status" name="product_stock_status">
+                        <option value="">Todos os Status</option>
+                        <option value="in_stock" {% if product_stock_status == 'in_stock' %}selected{% endif %}>Em Estoque</option>
+                        <option value="low_stock" {% if product_stock_status == 'low_stock' %}selected{% endif %}>Estoque Baixo</option>
+                        <option value="out_of_stock" {% if product_stock_status == 'out_of_stock' %}selected{% endif %}>Sem Estoque</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                </div>
+                <!-- Preserve existing date filters -->
+                <input type="hidden" name="start_date" value="{{ start_date }}">
+                <input type="hidden" name="end_date" value="{{ end_date }}">
+            </form>
+        </div>
+    </div>
+
     <!-- Statistics cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
@@ -233,6 +275,68 @@
                         <div class="text-center text-muted py-4">
                             <i class="fas fa-calendar-times fa-2x mb-3"></i>
                             <p>Nenhum agendamento próximo</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Filtered Products -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-boxes text-primary me-2"></i>
+                        Todos os Produtos (Filtrados)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if all_filtered_products %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>SKU</th>
+                                        <th>Estoque Atual</th>
+                                        <th>Preço de Venda</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in all_filtered_products %}
+                                    <tr>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.sku }}</td>
+                                        <td>{{ product.current_stock }}</td>
+                                        <td>R$ {{ "%.2f"|format(product.sale_price) }}</td>
+                                        <td>
+                                            {% if product.stock_status == 'out_of_stock' %}
+                                                <span class="badge bg-danger">Sem Estoque</span>
+                                            {% elif product.stock_status == 'low_stock' %}
+                                                <span class="badge bg-warning">Baixo Estoque</span>
+                                            {% elif product.stock_status == 'high_stock' %}
+                                                <span class="badge bg-info">Estoque Alto</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Em Estoque</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('inventory.products') }}" class="btn btn-sm btn-outline-primary">
+                                Gerenciar Produtos
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-box-open fa-2x mb-3"></i>
+                            <p>Nenhum produto encontrado com os filtros aplicados.</p>
                         </div>
                     {% endif %}
                 </div>
