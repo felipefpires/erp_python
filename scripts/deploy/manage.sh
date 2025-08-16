@@ -155,8 +155,10 @@ update() {
     backup
     
     # Atualizar código
+    git status
     git fetch origin erp_python
     git reset --hard origin/erp_python
+    git status
     git pull origin erp_python
     
     # Atualizar dependências
