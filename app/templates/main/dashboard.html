@@ -68,6 +68,38 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
+                            <div class="stats-number">{{ total_stock_quantity }}</div>
+                            <div class="text-white-50">Quantidade Total em Estoque</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="stats-number">R$ {{ "%.2f"|format(total_stock_value) }}</div>
+                            <div class="text-white-50">Valor Total do Estoque</div>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dollar-sign fa-2x text-white-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stats-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
                             <div class="stats-number">R$ {{ "%.2f"|format(monthly_sales_total) }}</div>
                             <div class="text-white-50">Receita do Mês</div>
                         </div>

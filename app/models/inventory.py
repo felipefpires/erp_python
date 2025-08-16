@@ -38,6 +38,21 @@ class Product(db.Model):
     
     def __repr__(self):
         return f'<Product {self.name}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'sku': self.sku,
+            'current_stock': self.current_stock,
+            'cost_price': float(self.cost_price),
+            'sale_price': float(self.sale_price),
+            'min_stock': self.min_stock,
+            'max_stock': self.max_stock,
+            'unit': self.unit,
+            'is_active': self.is_active,
+            'stock_status': self.stock_status
+        }
     
     @property
     def stock_status(self):
