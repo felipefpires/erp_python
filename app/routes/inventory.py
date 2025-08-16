@@ -4,6 +4,55 @@ from app.models.inventory import Product, Category, StockMovement
 from app import db
 from datetime import datetime
 from sqlalchemy import func, or_
+from urllib.parse import urlencode
+
+def create_pagination_urls(base_url, current_args, page):
+    """Cria URLs de paginação preservando todos os filtros"""
+    args = current_args.copy()
+    args['page'] = page
+    return f"{base_url}?{urlencode(args)}"
+
+def create_pagination(query, page, per_page):
+    """Função utilitária para criar paginação compatível com Flask-SQLAlchemy 3.0.5"""
+    # Contar total de registros
+    total = query.count()
+    
+    # Calcular offset
+    offset = (page - 1) * per_page
+    
+    # Buscar itens paginados
+    items = query.offset(offset).limit(per_page).all()
+    
+    # Criar objeto de paginação
+    class Pagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if total > 0 else 0
+            self.has_prev = page > 1
+            self.has_next = page < self.pages
+            self.prev_num = page - 1 if self.has_prev else None
+            self.next_num = page + 1 if self.has_next else None
+        
+        def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+            """Método para iterar sobre as páginas da paginação"""
+            if self.pages == 0:
+                return
+                
+            last = 0
+            for num in range(1, self.pages + 1):
+                if (num <= left_edge or 
+                    (num > self.page - left_current - 1 and 
+                     num < self.page + right_current) or 
+                    num > self.pages - right_edge):
+                    if last + 1 != num:
+                        yield None
+                    yield num
+                    last = num
+    
+    return Pagination(items, page, per_page, total)
 
 inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
 
@@ -23,55 +72,95 @@ def index():
 @login_required
 def products():
     try:
-        # Query básica sem filtros complexos
-        products_list = Product.query.order_by(Product.name.asc()).all()
-        categories = Category.query.all()
-        
-        # Paginação manual simples
+        # Obter parâmetros de filtro
+        search = request.args.get('search', '').strip()
+        category_id = request.args.get('category', type=int)
+        status = request.args.get('status', '')
+        stock_status = request.args.get('stock_status', '')
+        sort = request.args.get('sort', 'name')
         page = request.args.get('page', 1, type=int)
         per_page = 20
-        start = (page - 1) * per_page
-        end = start + per_page
         
-        paginated_products = products_list[start:end]
+        # Debug: imprimir parâmetros recebidos
+        print(f"DEBUG - Filtros recebidos: search='{search}', category_id={category_id}, status='{status}', stock_status='{stock_status}', sort='{sort}', page={page}")
         
-        # Criar objeto de paginação simples
-        class SimplePagination:
-            def __init__(self, items, page, per_page, total):
-                self.items = items
-                self.page = page
-                self.per_page = per_page
-                self.total = total
-                self.pages = (total + per_page - 1) // per_page
-                self.has_prev = page > 1
-                self.has_next = page < self.pages
-                self.prev_num = page - 1 if self.has_prev else None
-                self.next_num = page + 1 if self.has_next else None
-            
-            def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
-                """Método para iterar sobre as páginas da paginação"""
-                last = 0
-                for num in range(1, self.pages + 1):
-                    if (num <= left_edge or 
-                        (num > self.page - left_current - 1 and 
-                         num < self.page + right_current) or 
-                        num > self.pages - right_edge):
-                        if last + 1 != num:
-                            yield None
-                        yield num
-                        last = num
+        # Query base
+        query = Product.query
         
-        pagination = SimplePagination(
-            items=paginated_products,
-            page=page,
-            per_page=per_page,
-            total=len(products_list)
-        )
+        # Aplicar filtros
+        if search:
+            query = query.filter(
+                or_(
+                    Product.name.ilike(f'%{search}%'),
+                    Product.sku.ilike(f'%{search}%'),
+                    Product.barcode.ilike(f'%{search}%'),
+                    Product.description.ilike(f'%{search}%')
+                )
+            )
+        
+        if category_id:
+            query = query.filter(Product.category_id == category_id)
+        
+        if status == 'active':
+            query = query.filter(Product.is_active == True)
+        elif status == 'inactive':
+            query = query.filter(Product.is_active == False)
+        
+        # Filtros de estoque corrigidos
+        if stock_status == 'in_stock':
+            # Produtos com estoque acima do mínimo
+            query = query.filter(
+                Product.current_stock > func.coalesce(Product.min_stock, 0)
+            )
+        elif stock_status == 'low_stock':
+            # Produtos com estoque baixo (acima de 0 mas abaixo ou igual ao mínimo)
+            query = query.filter(
+                Product.current_stock > 0,
+                Product.current_stock <= func.coalesce(Product.min_stock, 0)
+            )
+        elif stock_status == 'out_of_stock':
+            # Produtos sem estoque
+            query = query.filter(
+                or_(
+                    Product.current_stock == 0,
+                    Product.current_stock.is_(None)
+                )
+            )
+        
+        # Ordenação
+        if sort == 'name':
+            query = query.order_by(Product.name.asc())
+        elif sort == 'price':
+            query = query.order_by(Product.sale_price.asc())
+        elif sort == 'stock':
+            query = query.order_by(Product.current_stock.asc())
+        elif sort == 'created_at':
+            query = query.order_by(Product.created_at.desc())
+        else:
+            query = query.order_by(Product.name.asc())
+        
+        # Usar função utilitária para paginação
+        pagination = create_pagination(query, page, per_page)
+        
+        # Buscar categorias para o filtro
+        categories = Category.query.all()
+        
+        # Criar URLs de paginação preservando filtros
+        base_url = url_for('inventory.products')
+        current_args = dict(request.args)
+        if 'page' in current_args:
+            del current_args['page']
+        
+        # Debug: imprimir resultados
+        print(f"DEBUG - Total de produtos encontrados: {pagination.total}")
+        print(f"DEBUG - Produtos na página atual: {len(pagination.items)}")
         
         return render_template('inventory/products.html',
-                              products=paginated_products,
+                              products=pagination.items,
                               pagination=pagination,
-                              categories=categories)
+                              categories=categories,
+                              base_url=base_url,
+                              current_args=current_args)
     
     except Exception as e:
         print(f"Erro na listagem de produtos: {e}")
@@ -294,12 +383,17 @@ def delete_category(id):
 @login_required
 def movements():
     page = request.args.get('page', 1, type=int)
-    movements_pagination = StockMovement.query.order_by(
-        StockMovement.movement_date.desc()
-    ).paginate(page=page, per_page=20, error_out=False)
+    per_page = 20
+    
+    # Query base
+    query = StockMovement.query.order_by(StockMovement.movement_date.desc())
+    
+    # Usar função utilitária para paginação
+    pagination = create_pagination(query, page, per_page)
+    
     return render_template('inventory/movements.html', 
-                         movements=movements_pagination.items,
-                         pagination=movements_pagination)
+                         movements=pagination.items,
+                         pagination=pagination)
 
 @inventory_bp.route('/movements/new', methods=['GET', 'POST'])
 @login_required

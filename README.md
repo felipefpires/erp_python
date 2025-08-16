@@ -2,6 +2,21 @@
 
 Um sistema ERP completo desenvolvido em Python/Flask para gerenciamento de empresas, incluindo CRM, finanças, estoque e agendamentos.
 
+## ✅ Status do Projeto
+
+- ✅ **Sistema funcionando em produção**
+- ✅ **Acesso via rede local configurado**
+- ✅ **Serviço systemd configurado**
+- ✅ **Banco de dados SQLite funcionando**
+- ✅ **Interface web responsiva**
+- ✅ **Sistema de autenticação implementado**
+
+## 🌐 Acesso ao Sistema
+
+O sistema está rodando em produção e pode ser acessado via:
+- **URL Local**: `http://127.0.0.1:5000`
+- **URL Rede**: `http://192.168.18.191:5000`
+
 ## 📁 Estrutura do Projeto
 
 ```

@@ -27,7 +27,7 @@
                     <select class="form-select" id="category" name="category">
                         <option value="">Todas</option>
                         {% for category in categories %}
-                        <option value="{{ category.id }}" {% if request.args.get('category')|int == category.id %}selected{% endif %}>
+                        <option value="{{ category.id }}" {% if request.args.get('category')|string == category.id|string %}selected{% endif %}>
                             {{ category.name }}
                         </option>
                         {% endfor %}
@@ -182,7 +182,7 @@
         <ul class="pagination justify-content-center">
             {% if pagination.has_prev %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('inventory.products', page=pagination.prev_num, **request.args) }}">
+                    <a class="page-link" href="{{ base_url }}?{{ current_args|urlencode }}&page={{ pagination.prev_num }}">
                         <i class="fas fa-chevron-left"></i>
                     </a>
                 </li>
@@ -192,7 +192,7 @@
                 {% if page_num %}
                     {% if page_num != pagination.page %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventory.products', page=page_num, **request.args) }}">
+                            <a class="page-link" href="{{ base_url }}?{{ current_args|urlencode }}&page={{ page_num }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -210,7 +210,7 @@
             
             {% if pagination.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('inventory.products', page=pagination.next_num, **request.args) }}">
+                    <a class="page-link" href="{{ base_url }}?{{ current_args|urlencode }}&page={{ pagination.next_num }}">
                         <i class="fas fa-chevron-right"></i>
                     </a>
                 </li>
