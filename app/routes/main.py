@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.models.crm import Customer, Sale
-from app.models.inventory import Product
+from app.models.inventory import Product, Category
 from app.models.finance import Transaction, Account
 from app.models.schedule import Appointment, Event
 from app.models.settings import SystemSettings, EmailSettings, BackupSettings
